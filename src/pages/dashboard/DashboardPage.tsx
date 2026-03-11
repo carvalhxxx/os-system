@@ -109,7 +109,7 @@ export default function DashboardPage() {
               </div>
               <ArrowRight className="w-4 h-4 text-gray-300 dark:text-slate-600 group-hover:text-purple-400 transition-colors" />
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white truncate">
               {formatCurrency(stats?.total_revenue ?? 0)}
             </p>
             <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mt-0.5">Receita Recebida</p>
@@ -124,7 +124,7 @@ export default function DashboardPage() {
               </div>
               <ArrowRight className="w-4 h-4 text-gray-300 dark:text-slate-600 group-hover:text-cyan-400 transition-colors" />
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white truncate">
               {formatCurrency(stats?.total_receivable ?? 0)}
             </p>
             <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mt-0.5">A Receber</p>
@@ -259,7 +259,7 @@ export default function DashboardPage() {
                     <td className="table-cell">
                       <StatusBadge status={order.status} />
                     </td>
-                    <td className="table-cell hidden md:table-cell text-gray-500 dark:text-slate-400">
+                    <td className="table-cell hidden md:table-cell text-gray-500 dark:text-slate-400 whitespace-nowrap">
                       {formatDate(order.opened_at)}
                     </td>
                     <td className="table-cell text-right font-medium">

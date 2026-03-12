@@ -128,8 +128,8 @@ export default function OrdersPage() {
           ))}
         </select>
 
-        <div className="flex gap-2 items-end sm:col-span-2 lg:col-span-1">
-          <div className="flex-1">
+        <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
+          <div>
             <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">De</label>
             <input
               type="date"
@@ -138,7 +138,7 @@ export default function OrdersPage() {
               className="input-field w-full text-sm"
             />
           </div>
-          <div className="flex-1">
+          <div>
             <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">Até</label>
             <input
               type="date"

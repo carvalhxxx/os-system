@@ -185,7 +185,8 @@ export default function OrderDetailPage() {
 
   if (isLoading || !order) return <PageLoader />
 
-  const isLocked = order.status === 'finalizada' || order.status === 'cancelada'
+  const isLocked = true // visualização sempre somente leitura
+  const canEdit = order.status !== 'finalizada' && order.status !== 'cancelada'
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -218,7 +219,7 @@ export default function OrderDetailPage() {
 
         <div className="flex gap-2 flex-wrap">
           {/* Status: bloqueado se finalizada/cancelada */}
-          {!isLocked ? (
+          {canEdit ? (
             <select
               value={order.status}
               onChange={e => updateStatusMutation.mutate(e.target.value as OrderStatus)}
@@ -241,7 +242,7 @@ export default function OrderDetailPage() {
           </button>
 
           {/* Editar: só disponível se não estiver bloqueada */}
-          {!isLocked && (
+          {canEdit && (
             <Link to={`/ordens/${id}/editar`} className="btn-primary">
               <Edit2 className="w-4 h-4" /> Editar
             </Link>

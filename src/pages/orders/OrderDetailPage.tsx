@@ -2,15 +2,15 @@ import { useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, Edit2, Download, Printer, Paperclip,
-  FileText, Image, Upload, X, Loader2, Share2, Lock
+  ArrowLeft, Edit2, Download, Printer, Paperclip, Lock,
+  FileText, Image, Upload, X, Loader2, Share2, Wrench, Phone,
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { ordersService } from '../../services/orders.service'
 import { attachmentsService } from '../../services/attachments.service'
 import { orderItemsService } from '../../services/orderItems.service'
 import { OrderStatus } from '../../types'
-import { StatusBadge, PageLoader, ConfirmDialog } from '../../components/ui'
+import { StatusBadge, PageLoader, ConfirmDialog, Modal } from '../../components/ui'
 import { formatCurrency, formatDate, formatDateTime, formatFileSize } from '../../lib/utils'
 import { exportOrderToPDF } from '../../lib/pdf'
 import { OrderItemsPanel } from '../../components/OrderItemsPanel'
@@ -111,6 +111,7 @@ export default function OrderDetailPage() {
   const qc = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
   const [deleteAttachment, setDeleteAttachment] = useState<string | null>(null)
+  const [techModalOpen, setTechModalOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const { settings: company } = useCompanySettings()
@@ -264,12 +265,24 @@ export default function OrderDetailPage() {
                 <p className="text-sm text-gray-500 dark:text-slate-400">{order.client?.email || ''}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-slate-400 mb-1">Técnico</p>
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {order.technician?.name || 'Não atribuído'}
-                </p>
-                {order.technician?.specialty && (
-                  <p className="text-sm text-gray-500 dark:text-slate-400">{order.technician.specialty}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-1">Funcionário</p>
+                {order.technician ? (
+                  <button
+                    onClick={() => setTechModalOpen(true)}
+                    className="text-left group"
+                  >
+                    <p className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {order.technician.name}
+                    </p>
+                    {order.technician.specialty && (
+                      <p className="text-sm text-gray-500 dark:text-slate-400">{order.technician.specialty}</p>
+                    )}
+                    <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Ver perfil
+                    </p>
+                  </button>
+                ) : (
+                  <p className="font-semibold text-gray-400 dark:text-slate-500">Não atribuído</p>
                 )}
               </div>
             </div>
@@ -455,6 +468,45 @@ export default function OrderDetailPage() {
         open={shareOpen}
         onClose={() => setShareOpen(false)}
       />
+
+      {/* Modal do funcionário */}
+      {order.technician && (
+        <Modal open={techModalOpen} onClose={() => setTechModalOpen(false)} title="Funcionário Responsável" size="sm">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-xl">
+              <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center shrink-0">
+                <Wrench className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">{order.technician.name}</p>
+                {order.technician.specialty && (
+                  <p className="text-sm text-gray-500 dark:text-slate-400">{order.technician.specialty}</p>
+                )}
+              </div>
+            </div>
+
+            {(order.technician as any).phone && (
+              <div className="flex items-center gap-3 text-sm text-gray-700 dark:text-slate-300">
+                <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                <span>{(order.technician as any).phone}</span>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-slate-700">
+              <Link
+                to={`/tecnicos/${order.technician.id}`}
+                className="btn-secondary flex-1 justify-center text-sm"
+                onClick={() => setTechModalOpen(false)}
+              >
+                Ver perfil completo
+              </Link>
+              <button className="btn-secondary flex-1 justify-center text-sm" onClick={() => setTechModalOpen(false)}>
+                Fechar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

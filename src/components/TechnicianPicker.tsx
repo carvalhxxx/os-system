@@ -78,7 +78,7 @@ export function TechnicianPicker({ value, onChange, error }: TechnicianPickerPro
           </div>
         ) : (
           <span className="text-gray-400 dark:text-slate-500 text-sm">
-            Selecione um técnico...
+            Selecione um funcionário...
           </span>
         )}
         <div className="flex items-center gap-1 shrink-0">
@@ -91,7 +91,7 @@ export function TechnicianPicker({ value, onChange, error }: TechnicianPickerPro
         </div>
       </button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Selecionar Técnico" size="md">
+      <Modal open={open} onClose={() => setOpen(false)} title="Selecionar Funcionário" size="md">
         <div className="space-y-3">
 
           <div className="relative">
@@ -120,7 +120,7 @@ export function TechnicianPicker({ value, onChange, error }: TechnicianPickerPro
               <div className="py-8 text-center">
                 <Wrench className="w-8 h-8 text-gray-200 dark:text-slate-700 mx-auto mb-2" />
                 <p className="text-sm text-gray-400">
-                  {search ? `Nenhum técnico encontrado para "${search}"` : 'Nenhum técnico ativo cadastrado'}
+                  {search ? `Nenhum funcionário encontrado para "${search}"` : 'Nenhum funcionário ativo cadastrado'}
                 </p>
               </div>
             )}

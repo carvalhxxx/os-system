@@ -38,10 +38,10 @@ export default function TechniciansPage() {
     mutationFn: (data: TechnicianInsert) => techniciansService.create(user!.id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['technicians'] })
-      toast.success('Técnico criado!')
+      toast.success('Funcionário criado!')
       closeModal()
     },
-    onError: () => toast.error('Erro ao criar técnico'),
+    onError: () => toast.error('Erro ao criar funcionário'),
   })
 
   const updateMutation = useMutation({
@@ -49,20 +49,20 @@ export default function TechniciansPage() {
       techniciansService.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['technicians'] })
-      toast.success('Técnico atualizado!')
+      toast.success('Funcionário atualizado!')
       closeModal()
     },
-    onError: () => toast.error('Erro ao atualizar técnico'),
+    onError: () => toast.error('Erro ao atualizar funcionário'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => techniciansService.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['technicians'] })
-      toast.success('Técnico excluído!')
+      toast.success('Funcionário excluído!')
       setDeleteTarget(null)
     },
-    onError: () => toast.error('Erro ao excluir técnico'),
+    onError: () => toast.error('Erro ao excluir funcionário'),
   })
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -94,13 +94,13 @@ export default function TechniciansPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Técnicos</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Funcionários</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             {activeCount} ativo{activeCount !== 1 ? 's' : ''} de {technicians.length} cadastrado{technicians.length !== 1 ? 's' : ''}
           </p>
         </div>
         <button className="btn-primary" onClick={openCreate}>
-          <Plus className="w-4 h-4" /> Novo Técnico
+          <Plus className="w-4 h-4" /> Novo Funcionário
         </button>
       </div>
 
@@ -110,11 +110,11 @@ export default function TechniciansPage() {
         ) : !technicians.length ? (
           <EmptyState
             icon={<Wrench className="w-8 h-8" />}
-            title="Nenhum técnico cadastrado"
-            description="Cadastre seus técnicos para atribuí-los às ordens de serviço."
+            title="Nenhum funcionário cadastrado"
+            description="Cadastre seus funcionários para atribuí-los às ordens de serviço."
             action={
               <button className="btn-primary" onClick={openCreate}>
-                <Plus className="w-4 h-4" /> Adicionar Técnico
+                <Plus className="w-4 h-4" /> Adicionar Funcionário
               </button>
             }
           />
@@ -184,7 +184,7 @@ export default function TechniciansPage() {
         )}
       </div>
 
-      <Modal open={modalOpen} onClose={closeModal} title={editTarget ? 'Editar Técnico' : 'Novo Técnico'}>
+      <Modal open={modalOpen} onClose={closeModal} title={editTarget ? 'Editar Funcionário' : 'Novo Funcionário'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormField label="Nome" error={errors.name?.message} required>
             <input {...register('name')} className="input-field" placeholder="Nome completo" />
@@ -198,7 +198,7 @@ export default function TechniciansPage() {
           <FormField label="Status">
             <label className="flex items-center gap-3 cursor-pointer">
               <input {...register('active')} type="checkbox" className="w-4 h-4 rounded text-blue-600" />
-              <span className="text-sm text-gray-700 dark:text-slate-300">Técnico ativo</span>
+              <span className="text-sm text-gray-700 dark:text-slate-300">Funcionário ativo</span>
             </label>
           </FormField>
           <div className="flex gap-3 justify-end pt-2 border-t border-gray-100 dark:border-slate-700">
@@ -214,7 +214,7 @@ export default function TechniciansPage() {
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Excluir Técnico"
+        title="Excluir Funcionário"
         message={`Tem certeza que deseja excluir "${deleteTarget?.name}"?`}
         confirmLabel="Excluir"
         loading={deleteMutation.isPending}

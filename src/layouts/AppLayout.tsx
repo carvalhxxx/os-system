@@ -16,7 +16,7 @@ import toast from 'react-hot-toast'
 const NAV_ITEMS = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/clientes',     icon: Users,           label: 'Clientes' },
-  { to: '/tecnicos',     icon: Wrench,          label: 'Técnicos' },
+  { to: '/tecnicos',     icon: Wrench,          label: 'Funcionários' },
   { to: '/pecas',        icon: Package,         label: 'Catálogo de Peças' },
   { to: '/ordens',       icon: ClipboardList,   label: 'Ordens de Serviço' },
   { to: '/recebimentos', icon: Wallet,          label: 'Recebimentos' },

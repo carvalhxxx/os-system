@@ -161,7 +161,7 @@ export default function OrderFormPage() {
                 error={errors.client_id?.message}
               />
             </FormField>
-            <FormField label="Técnico Responsável">
+            <FormField label="Funcionário Responsável">
               <TechnicianPicker
                 value={watch('technician_id') || ''}
                 onChange={(id) => setValue('technician_id', id || undefined, { shouldValidate: true })}
@@ -226,7 +226,7 @@ export default function OrderFormPage() {
               {...register('diagnosis')}
               rows={3}
               className="input-field resize-none"
-              placeholder="Diagnóstico técnico após análise..."
+              placeholder="Diagnóstico funcionário após análise..."
             />
           </FormField>
           <FormField label="Serviço Realizado" error={errors.service_performed?.message}>

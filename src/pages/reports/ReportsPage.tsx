@@ -5,7 +5,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import {
-  TrendingUp, TrendingDown, DollarSign, ClipboardList, Users, Wrench, Package, Award, ChevronDown,
+  TrendingUp, TrendingDown, DollarSign, ClipboardList,
+   Users, Wrench, Package, Award, ChevronDown,
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { reportsService, ReportFilters } from '../../services/reports.service'
@@ -395,13 +396,13 @@ export default function ReportsPage() {
             )}
           </div>
 
-          {/* ── Performance dos técnicos ── */}
+          {/* ── Performance dos funcionários ── */}
           {techPerf.length > 0 && (
             <div className="card overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800">
                 <SectionTitle
                   icon={<Wrench className="w-5 h-5" />}
-                  title="Performance dos Técnicos"
+                  title="Performance dos Funcionários"
                 />
               </div>
               <div className="overflow-x-auto">
@@ -409,7 +410,7 @@ export default function ReportsPage() {
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-slate-800">
                       <th className="table-header">#</th>
-                      <th className="table-header">Técnico</th>
+                      <th className="table-header">Funcionário</th>
                       <th className="table-header text-center">Total OS</th>
                       <th className="table-header text-center">Finalizadas</th>
                       <th className="table-header text-center">Conclusão</th>

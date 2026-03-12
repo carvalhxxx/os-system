@@ -95,7 +95,7 @@ export function exportOrderToPDF(
     startY: y + 3,
     head: [],
     body: [
-      ['Técnico', order.technician?.name || 'Não atribuído', 'Abertura', formatDate(order.opened_at)],
+      ['Funcionário', order.technician?.name || 'Não atribuído', 'Abertura', formatDate(order.opened_at)],
       ['Mão de Obra', formatCurrency(order.labor_value ?? 0), 'Conclusão', formatDate(order.closed_at)],
     ],
     theme: 'grid',
@@ -227,7 +227,7 @@ export function exportOrderToPDF(
   doc.setFontSize(8)
   doc.setTextColor(130, 130, 130)
   doc.text('Assinatura do Cliente', 52, y + 5, { align: 'center' })
-  doc.text('Assinatura do Técnico', 158, y + 5, { align: 'center' })
+  doc.text('Assinatura do Funcionário', 158, y + 5, { align: 'center' })
 
   // ─── Rodapé em todas as páginas ───────────────────────────
   const pageCount = (doc as jsPDF & { internal: { getNumberOfPages: () => number } })

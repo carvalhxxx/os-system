@@ -236,7 +236,7 @@ export default function DashboardPage() {
                 <tr className="border-b border-gray-100 dark:border-slate-800">
                   <th className="table-header">Nº OS</th>
                   <th className="table-header">Cliente</th>
-                  <th className="table-header hidden sm:table-cell">Técnico</th>
+                  <th className="table-header hidden sm:table-cell">Funcionário</th>
                   <th className="table-header">Status</th>
                   <th className="table-header hidden md:table-cell">Data</th>
                   <th className="table-header text-right">Valor</th>

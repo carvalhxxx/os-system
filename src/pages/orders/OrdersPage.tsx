@@ -95,22 +95,22 @@ export default function OrdersPage() {
       </div>
 
       {/* Filters bar */}
-      <div className="card p-4 flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-48">
+      <div className="card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="relative sm:col-span-2 lg:col-span-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Buscar por nº, descrição..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="input-field pl-9"
+            className="input-field pl-9 w-full"
           />
         </div>
 
         <select
           value={filters.status || ''}
           onChange={e => handleFilterChange('status', e.target.value)}
-          className="input-field w-auto"
+          className="input-field w-full"
         >
           {STATUS_OPTIONS.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -120,7 +120,7 @@ export default function OrdersPage() {
         <select
           value={filters.client_id || ''}
           onChange={e => handleFilterChange('client_id', e.target.value)}
-          className="input-field w-auto"
+          className="input-field w-full"
         >
           <option value="">Todos os clientes</option>
           {clients.map(c => (
@@ -128,25 +128,30 @@ export default function OrdersPage() {
           ))}
         </select>
 
-        <div className="flex gap-2 items-center">
-          <input
-            type="date"
-            value={filters.date_from || ''}
-            onChange={e => handleFilterChange('date_from', e.target.value)}
-            className="input-field w-auto text-sm"
-          />
-          <span className="text-gray-400 text-sm">até</span>
-          <input
-            type="date"
-            value={filters.date_to || ''}
-            onChange={e => handleFilterChange('date_to', e.target.value)}
-            className="input-field w-auto text-sm"
-          />
+        <div className="flex gap-2 items-end sm:col-span-2 lg:col-span-1">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">De</label>
+            <input
+              type="date"
+              value={filters.date_from || ''}
+              onChange={e => handleFilterChange('date_from', e.target.value)}
+              className="input-field w-full text-sm"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">Até</label>
+            <input
+              type="date"
+              value={filters.date_to || ''}
+              onChange={e => handleFilterChange('date_to', e.target.value)}
+              className="input-field w-full text-sm"
+            />
+          </div>
         </div>
 
         {(filters.status || filters.client_id || filters.date_from || filters.date_to || search) && (
           <button
-            className="btn-secondary text-sm"
+            className="btn-secondary text-sm sm:col-span-2 lg:col-span-4"
             onClick={() => { setFilters({}); setSearch(''); setPage(1) }}
           >
             Limpar filtros
@@ -177,7 +182,7 @@ export default function OrdersPage() {
                   <tr className="border-b border-gray-100 dark:border-slate-800">
                     <th className="table-header">Nº OS</th>
                     <th className="table-header">Cliente</th>
-                    <th className="table-header hidden sm:table-cell">Técnico</th>
+                    <th className="table-header hidden sm:table-cell">Funcionário</th>
                     <th className="table-header">Status</th>
                     <th className="table-header hidden md:table-cell">Abertura</th>
                     <th className="table-header hidden lg:table-cell text-right">Valor</th>

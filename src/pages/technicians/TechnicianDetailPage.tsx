@@ -1,46 +1,34 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import {
-  ArrowLeft, Edit2, Phone, Mail, MapPin, FileText,
-  ClipboardList,  TrendingUp,
-  CheckCircle2, XCircle, Plus, User,
+  ArrowLeft, Edit2, Wrench, Phone, CheckCircle, XCircle,
+  ClipboardList, DollarSign, TrendingUp, CheckCircle2,
+  FileText, CalendarDays, Timer,
 } from 'lucide-react'
-import { clientHistoryService } from '../../services/clientHistory.service'
-import { clientsService } from '../../services/clients.service'
-import {
-  PageLoader, Modal, FormField, ConfirmDialog,
-} from '../../components/ui'
+import { technicianHistoryService } from '../../services/technicianHistory.service'
+import { techniciansService } from '../../services/technicians.service'
+import { PageLoader, Modal, FormField, ConfirmDialog } from '../../components/ui'
 import {
   formatCurrency, formatDate,
   STATUS_LABELS, STATUS_COLORS,
   PAYMENT_STATUS_LABELS, PAYMENT_STATUS_COLORS,
 } from '../../lib/utils'
-import { ClientInsert, ServiceOrder, PAYMENT_METHOD_LABELS, PaymentMethod } from '../../types'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useMutation } from '@tanstack/react-query'
+import { ServiceOrder, TechnicianInsert, PaymentMethod, PAYMENT_METHOD_LABELS } from '../../types'
 import toast from 'react-hot-toast'
 
-// ─── Reutilizamos o schema de edição do cliente ───────────
 const schema = z.object({
-  name:     z.string().min(2, 'Nome obrigatório'),
-  phone:    z.string().min(10, 'Telefone inválido'),
-  email:    z.string().email('Email inválido').or(z.literal('')).optional(),
-  document: z.string().min(11, 'CPF/CNPJ inválido'),
-  address:  z.string().optional(),
-  city:     z.string().optional(),
-  state:    z.string().optional(),
-  zip_code: z.string().optional(),
-  notes:    z.string().optional(),
+  name:      z.string().min(2, 'Nome obrigatório'),
+  phone:     z.string().min(10, 'Telefone inválido'),
+  specialty: z.string().optional(),
+  active:    z.boolean(),
 })
 type FormData = z.infer<typeof schema>
 
-// ─── Stat card ─────────────────────────────────────────────
-function StatCard({
-  label, value, sub, icon, color,
-}: {
+function StatCard({ label, value, sub, icon, color }: {
   label: string; value: string; sub?: string
   icon: React.ReactNode; color: string
 }) {
@@ -58,7 +46,6 @@ function StatCard({
   )
 }
 
-// ─── Linha da OS no histórico ──────────────────────────────
 function OrderRow({ order }: { order: ServiceOrder }) {
   const remaining = (order.service_value || 0) - (order.amount_paid || 0)
 
@@ -72,7 +59,7 @@ function OrderRow({ order }: { order: ServiceOrder }) {
           {order.order_number}
         </Link>
         <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5 max-w-xs truncate">
-          {order.problem_description}
+          {(order.client as any)?.name || '—'}
         </p>
       </td>
 
@@ -80,8 +67,12 @@ function OrderRow({ order }: { order: ServiceOrder }) {
         {formatDate(order.opened_at)}
       </td>
 
-      <td className="table-cell hidden md:table-cell text-sm text-gray-600 dark:text-slate-400">
-        {(order.technician as any)?.name || <span className="text-gray-300 dark:text-slate-600">—</span>}
+      <td className="table-cell hidden md:table-cell text-sm text-gray-500 dark:text-slate-400">
+        {order.closed_at ? (
+          <span className="text-xs">
+            {Math.ceil((new Date(order.closed_at).getTime() - new Date(order.opened_at).getTime()) / (1000 * 60 * 60 * 24))}d
+          </span>
+        ) : <span className="text-gray-300 dark:text-slate-600">—</span>}
       </td>
 
       <td className="table-cell">
@@ -95,18 +86,16 @@ function OrderRow({ order }: { order: ServiceOrder }) {
           {formatCurrency(order.service_value)}
         </p>
         {order.status === 'finalizada' && order.payment_status !== 'pago' && remaining > 0 && (
-          <p className="text-xs text-red-500 dark:text-red-400">
-            {formatCurrency(remaining)} pendente
-          </p>
+          <p className="text-xs text-red-500 dark:text-red-400">{formatCurrency(remaining)} pend.</p>
         )}
       </td>
 
       <td className="table-cell hidden lg:table-cell">
         {order.status === 'finalizada' ? (
-          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${PAYMENT_STATUS_COLORS[order.payment_status]}`}>
+          <span className={`inline-flex text-xs font-semibold px-2 py-0.5 rounded-full ${PAYMENT_STATUS_COLORS[order.payment_status]}`}>
             {PAYMENT_STATUS_LABELS[order.payment_status]}
             {order.payment_method && (
-              <span className="font-normal opacity-75">
+              <span className="font-normal opacity-75 ml-1">
                 · {PAYMENT_METHOD_LABELS[order.payment_method as PaymentMethod]}
               </span>
             )}
@@ -120,7 +109,6 @@ function OrderRow({ order }: { order: ServiceOrder }) {
         <Link
           to={`/ordens/${order.id}`}
           className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors inline-flex"
-          title="Abrir OS"
         >
           <FileText className="w-4 h-4" />
         </Link>
@@ -129,79 +117,60 @@ function OrderRow({ order }: { order: ServiceOrder }) {
   )
 }
 
-// ─── Página principal ──────────────────────────────────────
-export default function ClientDetailPage() {
+export default function TechnicianDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState('')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['client-history', id],
-    queryFn: () => clientHistoryService.getClientHistory(id!),
+    queryKey: ['technician-history', id],
+    queryFn: () => technicianHistoryService.getTechnicianHistory(id!),
     enabled: !!id,
   })
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { active: true },
   })
 
   const updateMutation = useMutation({
-    mutationFn: (formData: ClientInsert) => clientsService.update(id!, formData),
+    mutationFn: (formData: TechnicianInsert) => techniciansService.update(id!, formData),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['client-history', id] })
-      qc.invalidateQueries({ queryKey: ['clients'] })
-      toast.success('Cliente atualizado!')
+      qc.invalidateQueries({ queryKey: ['technician-history', id] })
+      qc.invalidateQueries({ queryKey: ['technicians'] })
+      toast.success('Funcionário atualizado!')
       setEditOpen(false)
     },
-    onError: () => toast.error('Erro ao atualizar cliente'),
+    onError: () => toast.error('Erro ao atualizar funcionário'),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: () => clientsService.delete(id!),
+    mutationFn: () => techniciansService.delete(id!),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['clients'] })
-      toast.success('Cliente excluído!')
-      navigate('/clientes')
+      qc.invalidateQueries({ queryKey: ['technicians'] })
+      toast.success('Funcionário excluído!')
+      navigate('/tecnicos')
     },
-    onError: () => toast.error('Erro ao excluir cliente'),
+    onError: () => toast.error('Erro ao excluir funcionário'),
   })
 
   const openEdit = () => {
     if (data) reset({
-      name:     data.client.name,
-      phone:    data.client.phone,
-      email:    data.client.email    ?? '',
-      document: data.client.document,
-      address:  data.client.address  ?? '',
-      city:     data.client.city     ?? '',
-      state:    data.client.state    ?? '',
-      zip_code: data.client.zip_code ?? '',
-      notes:    data.client.notes    ?? '',
+      name:      data.technician.name,
+      phone:     data.technician.phone,
+      specialty: data.technician.specialty ?? '',
+      active:    data.technician.active,
     })
     setEditOpen(true)
-  }
-
-  const onSubmit = (formData: FormData) => {
-    updateMutation.mutate({
-      name:     formData.name,
-      phone:    formData.phone,
-      email:    formData.email || null,
-      document: formData.document,
-      address:  formData.address || null,
-      city:     formData.city || null,
-      state:    formData.state || null,
-      zip_code: formData.zip_code || null,
-      notes:    formData.notes || null,
-    })
   }
 
   if (isLoading) return <PageLoader />
   if (!data) return null
 
-  const { client, orders, stats } = data
+  const { technician, orders, stats } = data
 
   const filteredOrders = statusFilter
     ? orders.filter(o => o.status === statusFilter)
@@ -212,33 +181,40 @@ export default function ClientDetailPage() {
     return acc
   }, {} as Record<string, number>)
 
+  const finishedRate = stats.total_orders > 0
+    ? Math.round((stats.finished_orders / stats.total_orders) * 100)
+    : 0
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/clientes')}
+            onClick={() => navigate('/tecnicos')}
             className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{client.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{technician.name}</h1>
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                technician.active
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                  : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400'
+              }`}>
+                {technician.active ? 'Ativo' : 'Inativo'}
+              </span>
+            </div>
             <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
-              Cliente desde {formatDate(client.created_at)}
+              {technician.specialty || 'Funcionário'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            to={`/ordens/nova?client_id=${client.id}`}
-            className="btn-primary"
-          >
-            <Plus className="w-4 h-4" /> Nova OS
-          </Link>
           <button onClick={openEdit} className="btn-secondary">
             <Edit2 className="w-4 h-4" /> Editar
           </button>
@@ -251,87 +227,84 @@ export default function ClientDetailPage() {
         </div>
       </div>
 
-      {/* ── Layout 2 colunas ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* ── Coluna esquerda: dados do cliente ── */}
+        {/* Coluna esquerda — dados */}
         <div className="space-y-4">
           <div className="card p-6 space-y-4">
             <div className="flex items-center gap-3 pb-4 border-b border-gray-100 dark:border-slate-800">
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+                <Wrench className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">{client.name}</p>
-                <p className="text-xs font-mono text-gray-400 dark:text-slate-500">{client.document}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{technician.name}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500">
+                  {technician.specialty || 'Sem especialidade'}
+                </p>
               </div>
             </div>
 
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
                 <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-                <span>{client.phone}</span>
+                <span>{technician.phone}</span>
               </div>
-              {client.email && (
-                <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
-                  <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="truncate">{client.email}</span>
-                </div>
-              )}
-              {(client.address || client.city) && (
-                <div className="flex items-start gap-2 text-gray-700 dark:text-slate-300">
-                  <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                  <span>
-                    {[client.address, client.city, client.state].filter(Boolean).join(', ')}
-                    {client.zip_code && ` — ${client.zip_code}`}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
+                {technician.active
+                  ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  : <XCircle className="w-4 h-4 text-gray-400 shrink-0" />
+                }
+                <span>{technician.active ? 'Ativo' : 'Inativo'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
+                <CalendarDays className="w-4 h-4 text-gray-400 shrink-0" />
+                <span>Desde {formatDate(technician.created_at)}</span>
+              </div>
             </div>
-
-            {client.notes && (
-              <div className="pt-3 border-t border-gray-100 dark:border-slate-800">
-                <p className="text-xs font-medium text-gray-400 dark:text-slate-500 mb-1">Observações</p>
-                <p className="text-sm text-gray-600 dark:text-slate-400 italic">"{client.notes}"</p>
-              </div>
-            )}
           </div>
 
-          {/* Datas */}
+          {/* Resumo de desempenho */}
           <div className="card p-5 space-y-3">
             <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-              Histórico
+              Desempenho
             </p>
+
             <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500 dark:text-slate-400">Taxa de conclusão</span>
+              <span className="font-bold text-gray-800 dark:text-slate-200">{finishedRate}%</span>
+            </div>
+            <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-1.5">
+              <div
+                className="bg-green-500 h-1.5 rounded-full transition-all"
+                style={{ width: `${finishedRate}%` }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-sm pt-1">
+              <span className="text-gray-500 dark:text-slate-400">Tempo médio</span>
+              <span className="font-semibold text-gray-800 dark:text-slate-200">
+                {stats.avg_completion_days > 0
+                  ? `${stats.avg_completion_days.toFixed(1)} dias`
+                  : '—'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-sm border-t border-gray-100 dark:border-slate-800 pt-2">
               <span className="text-gray-500 dark:text-slate-400">Primeiro atendimento</span>
-              <span className="font-medium text-gray-800 dark:text-slate-200">
+              <span className="font-medium text-gray-700 dark:text-slate-300 text-xs">
                 {formatDate(stats.first_order)}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-slate-400">Último atendimento</span>
-              <span className="font-medium text-gray-800 dark:text-slate-200">
+              <span className="font-medium text-gray-700 dark:text-slate-300 text-xs">
                 {formatDate(stats.last_order)}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-100 dark:border-slate-800">
-              <span className="text-gray-500 dark:text-slate-400">Total gasto</span>
-              <span className="font-bold text-blue-600 dark:text-blue-400">
-                {formatCurrency(stats.total_spent)}
-              </span>
-            </div>
-            {stats.total_pending > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500 dark:text-slate-400">A receber</span>
-                <span className="font-semibold text-red-600 dark:text-red-400">
-                  {formatCurrency(stats.total_pending)}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* ── Coluna direita: KPIs + histórico ── */}
+        {/* Coluna direita — KPIs + histórico */}
         <div className="lg:col-span-2 space-y-6">
 
           {/* KPIs */}
@@ -349,16 +322,16 @@ export default function ClientDetailPage() {
               color="text-green-600 bg-green-100 dark:bg-green-900/40"
             />
             <StatCard
-              label="Ticket Médio"
-              value={formatCurrency(stats.avg_ticket)}
-              icon={<TrendingUp className="w-5 h-5" />}
+              label="Receita Gerada"
+              value={formatCurrency(stats.total_revenue)}
+              icon={<DollarSign className="w-5 h-5" />}
               color="text-purple-600 bg-purple-100 dark:bg-purple-900/40"
             />
             <StatCard
-              label="Canceladas"
-              value={String(stats.cancelled_orders)}
-              icon={<XCircle className="w-5 h-5" />}
-              color="text-red-500 bg-red-100 dark:bg-red-900/40"
+              label="Ticket Médio"
+              value={formatCurrency(stats.avg_ticket)}
+              icon={<TrendingUp className="w-5 h-5" />}
+              color="text-amber-600 bg-amber-100 dark:bg-amber-900/40"
             />
           </div>
 
@@ -372,7 +345,6 @@ export default function ClientDetailPage() {
                 </span>
               </h2>
 
-              {/* Filtro por status */}
               <div className="flex flex-wrap gap-1.5">
                 <button
                   onClick={() => setStatusFilter('')}
@@ -404,7 +376,7 @@ export default function ClientDetailPage() {
               <div className="py-12 text-center">
                 <ClipboardList className="w-8 h-8 text-gray-200 dark:text-slate-700 mx-auto mb-2" />
                 <p className="text-sm text-gray-400 dark:text-slate-500">
-                  {statusFilter ? 'Nenhuma OS com este status' : 'Nenhuma ordem de serviço encontrada'}
+                  {statusFilter ? 'Nenhuma OS com este status' : 'Nenhuma OS atribuída a este funcionário'}
                 </p>
               </div>
             ) : (
@@ -412,9 +384,13 @@ export default function ClientDetailPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-slate-800">
-                      <th className="table-header">OS / Problema</th>
+                      <th className="table-header">OS / Cliente</th>
                       <th className="table-header hidden sm:table-cell">Abertura</th>
-                      <th className="table-header hidden md:table-cell">Funcionário</th>
+                      <th className="table-header hidden md:table-cell">
+                        <span className="flex items-center gap-1">
+                          <Timer className="w-3 h-3" /> Prazo
+                        </span>
+                      </th>
                       <th className="table-header">Status</th>
                       <th className="table-header text-right">Valor</th>
                       <th className="table-header hidden lg:table-cell">Pagamento</th>
@@ -433,43 +409,26 @@ export default function ClientDetailPage() {
         </div>
       </div>
 
-      {/* ── Modal de edição ── */}
-      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Editar Cliente" size="lg">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField label="Nome" error={errors.name?.message} required>
-              <input {...register('name')} className="input-field" />
-            </FormField>
-            <FormField label="Telefone" error={errors.phone?.message} required>
-              <input {...register('phone')} className="input-field" />
-            </FormField>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField label="CPF / CNPJ" error={errors.document?.message} required>
-              <input {...register('document')} className="input-field" />
-            </FormField>
-            <FormField label="Email" error={errors.email?.message}>
-              <input {...register('email')} type="email" className="input-field" />
-            </FormField>
-          </div>
-          <FormField label="Endereço" error={errors.address?.message}>
-            <input {...register('address')} className="input-field" />
+      {/* Modal edição */}
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Editar Funcionário">
+        <form onSubmit={handleSubmit(d => updateMutation.mutate({
+          name: d.name, phone: d.phone,
+          specialty: d.specialty || null, active: d.active,
+        }))} className="space-y-4">
+          <FormField label="Nome" error={errors.name?.message} required>
+            <input {...register('name')} className="input-field" />
           </FormField>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="sm:col-span-2">
-              <FormField label="Cidade" error={errors.city?.message}>
-                <input {...register('city')} className="input-field" />
-              </FormField>
-            </div>
-            <FormField label="Estado" error={errors.state?.message}>
-              <input {...register('state')} className="input-field" maxLength={2} />
-            </FormField>
-            <FormField label="CEP" error={errors.zip_code?.message}>
-              <input {...register('zip_code')} className="input-field" />
-            </FormField>
-          </div>
-          <FormField label="Observações" error={errors.notes?.message}>
-            <textarea {...register('notes')} rows={2} className="input-field resize-none" />
+          <FormField label="Telefone" error={errors.phone?.message} required>
+            <input {...register('phone')} className="input-field" />
+          </FormField>
+          <FormField label="Especialidade" error={errors.specialty?.message}>
+            <input {...register('specialty')} className="input-field" placeholder="Ex: Informática, Elétrica..." />
+          </FormField>
+          <FormField label="Status">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input {...register('active')} type="checkbox" className="w-4 h-4 rounded text-blue-600" />
+              <span className="text-sm text-gray-700 dark:text-slate-300">Funcionário ativo</span>
+            </label>
           </FormField>
           <div className="flex gap-3 justify-end pt-2 border-t border-gray-100 dark:border-slate-700">
             <button type="button" className="btn-secondary" onClick={() => setEditOpen(false)}>Cancelar</button>
@@ -480,13 +439,13 @@ export default function ClientDetailPage() {
         </form>
       </Modal>
 
-      {/* ── Confirmar exclusão ── */}
+      {/* Confirmar exclusão */}
       <ConfirmDialog
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         onConfirm={() => deleteMutation.mutate()}
-        title="Excluir Cliente"
-        message={`Excluir "${client.name}"? Todas as ordens de serviço vinculadas também serão removidas.`}
+        title="Excluir Funcionário"
+        message={`Excluir "${technician.name}"? As ordens de serviço vinculadas não serão removidas.`}
         confirmLabel="Excluir"
         loading={deleteMutation.isPending}
       />

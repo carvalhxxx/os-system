@@ -204,7 +204,7 @@ export default function PortalPage() {
                 <InfoRow icon={Calendar} label="Data de Entrada" value={formatDate(order.opened_at)} />
                 <InfoRow icon={Calendar} label="Data de Conclusão" value={order.closed_at ? formatDate(order.closed_at) : 'Em aberto'} />
                 {order.technician && (
-                  <InfoRow icon={Wrench} label="Técnico Responsável" value={order.technician.name} />
+                  <InfoRow icon={Wrench} label="Funcionário Responsável" value={order.technician.name} />
                 )}
               </div>
             </div>

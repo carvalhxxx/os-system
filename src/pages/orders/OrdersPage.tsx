@@ -95,7 +95,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Filters bar */}
-      <div className="card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 overflow-hidden">
         <div className="relative sm:col-span-2 lg:col-span-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -128,23 +128,23 @@ export default function OrdersPage() {
           ))}
         </select>
 
-        <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
-          <div>
+        <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1 min-w-0">
+          <div className="min-w-0">
             <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">De</label>
             <input
               type="date"
               value={filters.date_from || ''}
               onChange={e => handleFilterChange('date_from', e.target.value)}
-              className="input-field w-full text-sm"
+              className="input-field w-full min-w-0 text-sm"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">Até</label>
             <input
               type="date"
               value={filters.date_to || ''}
               onChange={e => handleFilterChange('date_to', e.target.value)}
-              className="input-field w-full text-sm"
+              className="input-field w-full min-w-0 text-sm"
             />
           </div>
         </div>

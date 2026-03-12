@@ -11,6 +11,7 @@ import { StatusBadge, EmptyState, PageLoader, ConfirmDialog, Pagination } from '
 import { formatCurrency, formatDate } from '../../lib/utils'
 import { exportOrderToPDF } from '../../lib/pdf'
 import toast from 'react-hot-toast'
+import { DateRangePicker } from '../../components/DateRangePicker'
 
 const STATUS_OPTIONS: { value: OrderStatus | ''; label: string }[] = [
   { value: '', label: 'Todos os status' },
@@ -128,27 +129,13 @@ export default function OrdersPage() {
           ))}
         </select>
 
-        <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1 min-w-0 overflow-hidden">
-          <div className="min-w-0">
-            <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">De</label>
-            <input
-              type="date"
-              value={filters.date_from || ''}
-              onChange={e => handleFilterChange('date_from', e.target.value)}
-              style={{ fontSize: '13px', minWidth: 0 }}
-              className="input-field w-full block text-sm"
-            />
-          </div>
-          <div className="min-w-0">
-            <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">Até</label>
-            <input
-              type="date"
-              value={filters.date_to || ''}
-              onChange={e => handleFilterChange('date_to', e.target.value)}
-              style={{ fontSize: '13px', minWidth: 0 }}
-              className="input-field w-full block text-sm"
-            />
-          </div>
+        <div className="sm:col-span-2 lg:col-span-1">
+          <DateRangePicker
+            from={filters.date_from || ''}
+            to={filters.date_to || ''}
+            onFromChange={val => handleFilterChange('date_from', val)}
+            onToChange={val => handleFilterChange('date_to', val)}
+          />
         </div>
 
         {(filters.status || filters.client_id || filters.date_from || filters.date_to || search) && (

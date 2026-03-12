@@ -110,4 +110,10 @@
   .dark .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: rgb(71 85 105);
   }
+
+  input[type="date"] {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
 }

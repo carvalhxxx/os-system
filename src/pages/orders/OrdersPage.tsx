@@ -128,14 +128,15 @@ export default function OrdersPage() {
           ))}
         </select>
 
-        <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1 min-w-0">
+        <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1 min-w-0 overflow-hidden">
           <div className="min-w-0">
             <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">De</label>
             <input
               type="date"
               value={filters.date_from || ''}
               onChange={e => handleFilterChange('date_from', e.target.value)}
-              className="input-field w-full min-w-0 text-sm"
+              style={{ fontSize: '13px', minWidth: 0 }}
+              className="input-field w-full block text-sm"
             />
           </div>
           <div className="min-w-0">
@@ -144,7 +145,8 @@ export default function OrdersPage() {
               type="date"
               value={filters.date_to || ''}
               onChange={e => handleFilterChange('date_to', e.target.value)}
-              className="input-field w-full min-w-0 text-sm"
+              style={{ fontSize: '13px', minWidth: 0 }}
+              className="input-field w-full block text-sm"
             />
           </div>
         </div>

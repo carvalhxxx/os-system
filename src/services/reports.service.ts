@@ -50,14 +50,12 @@ export interface ReportFilters {
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
 export const reportsService = {
-  // ─── Receita mensal (apenas OS pagas) ───────────────────
+  // ─── Receita mensal (OS finalizadas, agrupado por data de conclusão) ───
   async getMonthlyRevenue(userId: string, filters: ReportFilters): Promise<MonthlyRevenue[]> {
     const { data, error } = await supabase
       .from('service_orders')
-      .select('opened_at, service_value, labor_value, parts_total, status, payment_status, amount_paid')
+      .select('opened_at, closed_at, service_value, labor_value, parts_total, payment_status, amount_paid')
       .eq('user_id', userId)
-      .gte('opened_at', filters.date_from)
-      .lte('opened_at', filters.date_to)
       .eq('status', 'finalizada')
       .order('opened_at')
 
@@ -65,19 +63,27 @@ export const reportsService = {
 
     const map = new Map<string, MonthlyRevenue>()
     for (const row of data || []) {
-      const date = new Date(row.opened_at)
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      // Usa closed_at se existir, senão opened_at como fallback
+      const dateStr = (row.closed_at || row.opened_at || '').split('T')[0]
+      if (!dateStr) continue
+
+      // Filtra pelo período
+      if (dateStr < filters.date_from || dateStr > filters.date_to) continue
+
+      const date = new Date(dateStr + 'T12:00:00')
+      const key   = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       const label = `${MONTH_NAMES[date.getMonth()]}/${String(date.getFullYear()).slice(2)}`
 
       if (!map.has(key)) {
         map.set(key, { month: label, month_full: key, revenue: 0, orders: 0, labor: 0, parts: 0 })
       }
       const entry = map.get(key)!
-      // Receita = valor pago (ou total se estiver pago)
-      const paid = row.payment_status === 'pago'
-        ? (row.service_value || 0)
-        : (row.amount_paid || 0)
-      entry.revenue += paid
+
+      // Receita: parcial usa amount_paid, senão usa service_value total
+      const total   = row.service_value || 0
+      const revenue = row.payment_status === 'pago_parcial' ? (row.amount_paid || 0) : total
+
+      entry.revenue += revenue
       entry.labor   += row.labor_value || 0
       entry.parts   += row.parts_total || 0
       entry.orders  += 1

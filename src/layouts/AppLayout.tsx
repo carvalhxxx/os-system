@@ -4,12 +4,13 @@ import { Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Wrench, ClipboardList,
   LogOut, Moon, Sun, Menu, X, ChevronDown,
-  Package, BarChart2, Wallet, Settings, Bell
+  Package, BarChart2, Wallet, Settings
 } from 'lucide-react'
 import { useAuth } from '.././hooks/useAuth'
 import { useTheme } from '.././hooks/useTheme'
 import { useCompanySettings } from '.././hooks/useCompanySettings'
 import { GlobalSearch } from '../components/GlobalSearch'
+import { NotificationBell } from '../components/NotificationBell'
 import { OfflineBanner } from '../components/OfflineBanner'
 import toast from 'react-hot-toast'
 
@@ -150,9 +151,7 @@ export default function AppLayout() {
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-600 dark:text-slate-400 transition-colors relative">
-              <Bell className="w-4 h-4" />
-            </button>
+            <NotificationBell />
 
             <div className="relative">
               <button

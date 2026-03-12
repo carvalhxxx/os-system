@@ -5,8 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import {
-  TrendingUp, TrendingDown, DollarSign, ClipboardList,
-   Users, Wrench, Package, Award, ChevronDown,
+  TrendingUp, TrendingDown, DollarSign, ClipboardList, Users, Wrench, Package, Award, ChevronDown,
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { reportsService, ReportFilters } from '../../services/reports.service'
@@ -134,6 +133,11 @@ export default function ReportsPage() {
     queryFn: () => reportsService.getMonthlyRevenue(user!.id, filters),
     enabled: !!user,
   })
+
+  // Se só tem 1 ponto, duplica para o traço aparecer no gráfico
+  const chartMonthly = monthly.length === 1
+    ? [{ ...monthly[0], month: '' }, monthly[0]]
+    : monthly
 
   const { data: allOrders = [], isLoading: loadingOrders } = useQuery({
     queryKey: ['report-orders', user?.id, filters],
@@ -280,7 +284,7 @@ export default function ReportsPage() {
                 title="Receita Mensal"
               />
               <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={monthly} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                <AreaChart data={chartMonthly} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={CHART_COLORS.revenue} stopOpacity={0.2} />
@@ -298,7 +302,7 @@ export default function ReportsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.5} />
                   <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}
-                    tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
+                    tickFormatter={v => v >= 1000 ? `R$${(v / 1000).toFixed(1).replace(/\.0$/, '')}k` : `R$${v}`} />
                   <Tooltip content={<ChartTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 12, paddingTop: 16 }} />
                   <Area type="monotone" dataKey="revenue" name="Total" stroke={CHART_COLORS.revenue}
@@ -323,7 +327,7 @@ export default function ReportsPage() {
                   title="Ordens por Mês"
                 />
                 <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={monthly} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                  <BarChart data={chartMonthly} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.5} />
                     <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />

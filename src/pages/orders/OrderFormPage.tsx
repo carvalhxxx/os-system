@@ -172,7 +172,7 @@ export default function OrderFormPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate(isEditing ? `/ordens/${id}` : (-1 as any))}
+          onClick={() => navigate('/ordens')}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-600 dark:text-slate-400 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -265,7 +265,7 @@ export default function OrderFormPage() {
           </div>
 
           <div className="flex items-center justify-end gap-3 pb-6">
-            <button type="button" className="btn-secondary" onClick={() => navigate(isEditing ? `/ordens/${id}` : (-1 as any))}>
+            <button type="button" className="btn-secondary" onClick={() => navigate('/ordens')}>
               Cancelar
             </button>
             <button type="submit" disabled={isSubmitting} className="btn-primary px-6">

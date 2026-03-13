@@ -16,6 +16,7 @@ import { FormField, PageLoader, ConfirmDialog } from '../../components/ui'
 import { ClientPicker } from '../../components/ClientPicker'
 import { TechnicianPicker } from '../../components/TechnicianPicker'
 import { OrderItemsPanel } from '../../components/OrderItemsPanel'
+import { OrderNotesPanel } from '../../components/OrderNotesPanel'
 import { formatFileSize } from '../../lib/utils'
 import toast from 'react-hot-toast'
 
@@ -263,6 +264,8 @@ export default function OrderFormPage() {
               <textarea {...register('notes')} rows={2} className="input-field resize-none" placeholder="Outras observações..." />
             </FormField>
           </div>
+
+          {isEditing && <OrderNotesPanel orderId={id!} />}
 
           <div className="flex items-center justify-end gap-3 pb-6">
             <button type="button" className="btn-secondary" onClick={() => navigate('/ordens')}>

@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Wrench, ClipboardList,
   LogOut, Moon, Sun, Menu, X, ChevronDown,
-  Package, BarChart2, Wallet, Settings
+  Package, BarChart2, Wallet, Settings, Receipt,
 } from 'lucide-react'
 import { useAuth } from '.././hooks/useAuth'
 import { useTheme } from '.././hooks/useTheme'
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { to: '/tecnicos',     icon: Wrench,          label: 'Funcionários' },
   { to: '/pecas',        icon: Package,         label: 'Catálogo de Peças' },
   { to: '/ordens',       icon: ClipboardList,   label: 'Ordens de Serviço' },
+  { to: '/orcamentos',   icon: Receipt,         label: 'Orçamentos' },
   { to: '/recebimentos', icon: Wallet,          label: 'Recebimentos' },
   { to: '/relatorios',   icon: BarChart2,       label: 'Relatórios' },
 ]

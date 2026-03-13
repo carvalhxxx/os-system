@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 
 const CACHE_KEY = 'os-manager-query-cache'
-const CACHE_MAX_AGE = 1000 * 60 * 60 * 24 // 24 horas
+const CACHE_MAX_AGE = 1000 * 60 * 5 // 5 minutos — só para navegação offline breve
 
 interface PersistedCache {
   timestamp: number
@@ -16,8 +16,15 @@ interface PersistedCache {
 export function persistCache(queryClient: QueryClient): void {
   try {
     const cache = queryClient.getQueryCache()
+    // Só persiste dados que mudam pouco (settings, empresa)
+    // Listas de OS, clientes etc. são sempre revalidadas do servidor
+    const PERSIST_KEYS = ['company-settings']
     const queries = cache.getAll()
-      .filter(q => q.state.status === 'success' && q.state.data !== undefined)
+      .filter(q =>
+        q.state.status === 'success' &&
+        q.state.data !== undefined &&
+        PERSIST_KEYS.some(k => (q.queryKey[0] as string)?.includes(k))
+      )
       .map(q => ({
         queryKey: q.queryKey as unknown[],
         data: q.state.data,

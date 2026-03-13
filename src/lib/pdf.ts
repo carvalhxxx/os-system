@@ -257,3 +257,170 @@ export function exportOrderToPDF(
     doc.save(`${order.order_number}.pdf`)
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// PDF de Orçamento
+// ─────────────────────────────────────────────────────────────
+import type { Quote } from '../services/quotes.service'
+
+export function exportQuoteToPDF(
+  quote: Quote,
+  mode: 'download' | 'print' = 'download',
+  company?: Partial<CompanySettings> | null,
+): void {
+  const doc = new jsPDF()
+  const companyName = company?.name || 'OS Manager'
+
+  // ─── Header ──────────────────────────────────────────────
+  doc.setFillColor(16, 185, 129) // verde (orçamento)
+  doc.rect(0, 0, 210, 32, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.text(companyName.toUpperCase(), 14, 13)
+
+  const companyLines: string[] = []
+  if (company?.phone || company?.email)
+    companyLines.push([company.phone, company.email].filter(Boolean).join('  |  '))
+  if (company?.address)
+    companyLines.push([company.address, company.city, company.state].filter(Boolean).join(', '))
+  if (company?.document)
+    companyLines.push(`CNPJ: ${company.document}`)
+
+  doc.setFontSize(7.5)
+  doc.setFont('helvetica', 'normal')
+  companyLines.forEach((line, i) => doc.text(line, 14, 19 + i * 4.5))
+
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.text(quote.quote_number, 196, 13, { align: 'right' })
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Emitido em: ${formatDateTime(new Date().toISOString())}`, 196, 19, { align: 'right' })
+
+  // ─── Título ───────────────────────────────────────────────
+  doc.setTextColor(16, 185, 129)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.text('ORÇAMENTO', 14, 44)
+
+  // ─── Cliente ──────────────────────────────────────────────
+  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(11)
+  doc.text('DADOS DO CLIENTE', 14, 52)
+
+  const clientRows: string[][] = []
+  if (quote.client) {
+    clientRows.push(['Nome', quote.client.name])
+    if (quote.client.phone || quote.client.email)
+      clientRows.push(['Contato', [quote.client.phone, quote.client.email].filter(Boolean).join('  |  ')])
+  }
+
+  autoTable(doc, {
+    startY: 55,
+    head: [],
+    body: clientRows,
+    theme: 'plain',
+    styles: { fontSize: 9, cellPadding: 2 },
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 30, textColor: [100, 100, 100] } },
+  })
+
+  // ─── Descrição ────────────────────────────────────────────
+  let y = getY(doc) + 8
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.text('DESCRIÇÃO DO SERVIÇO', 14, y)
+
+  autoTable(doc, {
+    startY: y + 3,
+    head: [],
+    body: [[quote.description]],
+    theme: 'plain',
+    styles: { fontSize: 9, cellPadding: 3 },
+  })
+
+  // ─── Itens ────────────────────────────────────────────────
+  if (quote.items?.length) {
+    y = getY(doc) + 8
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text('PEÇAS / MATERIAIS', 14, y)
+
+    autoTable(doc, {
+      startY: y + 3,
+      head: [['Item', 'Qtd', 'Preço Unit.', 'Total']],
+      body: quote.items.map(item => [
+        item.name,
+        item.quantity.toString(),
+        formatCurrency(item.unit_price),
+        formatCurrency(item.total_price),
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [16, 185, 129], fontSize: 9, fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 'auto' },
+        1: { halign: 'center', cellWidth: 20 },
+        2: { halign: 'right', cellWidth: 35 },
+        3: { halign: 'right', cellWidth: 35 },
+      },
+    })
+  }
+
+  // ─── Totais ───────────────────────────────────────────────
+  y = getY(doc) + 8
+  autoTable(doc, {
+    startY: y,
+    head: [],
+    body: [
+      ['Mão de obra', formatCurrency(quote.labor_value)],
+      ['Peças / Materiais', formatCurrency(quote.parts_total)],
+      ['TOTAL', formatCurrency(quote.total_value)],
+    ],
+    theme: 'plain',
+    styles: { fontSize: 10, cellPadding: 3 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 100 },
+      1: { halign: 'right' },
+    },
+    didParseCell(data) {
+      if (data.row.index === 2) {
+        data.cell.styles.fontSize = 12
+        data.cell.styles.fontStyle = 'bold'
+        data.cell.styles.textColor = [16, 185, 129]
+      }
+    },
+  })
+
+  // ─── Observações ──────────────────────────────────────────
+  if (quote.notes) {
+    y = getY(doc) + 8
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text('OBSERVAÇÕES', 14, y)
+    autoTable(doc, {
+      startY: y + 3,
+      head: [],
+      body: [[quote.notes]],
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 3 },
+    })
+  }
+
+  // ─── Rodapé ───────────────────────────────────────────────
+  const pageH = doc.internal.pageSize.height
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'italic')
+  doc.setTextColor(150, 150, 150)
+  doc.text('Este orçamento não tem valor fiscal.', 105, pageH - 10, { align: 'center' })
+
+  if (mode === 'download') {
+    doc.save(`${quote.quote_number}.pdf`)
+  } else {
+    const blob = doc.output('blob')
+    const url = URL.createObjectURL(blob)
+    const w = window.open(url)
+    w?.addEventListener('load', () => URL.revokeObjectURL(url))
+  }
+}

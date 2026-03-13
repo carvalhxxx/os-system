@@ -22,18 +22,22 @@ import OrderFormPage from './pages/orders/OrderFormPage'
 import OrderDetailPage from './pages/orders/OrderDetailPage'
 import PartsPage from './pages/parts/PartsPage'
 import ReportsPage from './pages/reports/ReportsPage'
+import QuotesPage from './pages/quotes/QuotesPage'
+import QuoteFormPage from './pages/quotes/QuoteFormPage'
 import ReceivablesPage from './pages/receivables/ReceivablesPage'
 import ClientDetailPage from './pages/clients/ClientDetailPage'
 import PortalPage from './pages/portal/PortalPage'
 import SettingsPage from './pages/settings/SettingsPage'
+import TechnicianDetailPage from './pages/technicians/TechnicianDetailPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2, // 2 minutos
+      staleTime: 1000 * 30,       // 30 segundos — revalida rápido
+      gcTime: 1000 * 60 * 5,      // 5 minutos em memória
       retry: 1,
-      // Mantém dados do cache mesmo quando a query falha (modo offline)
-      gcTime: 1000 * 60 * 60 * 24, // 24 horas em memória
+      refetchOnWindowFocus: true, // revalida ao voltar à aba
+      refetchOnReconnect: true,   // revalida ao reconectar internet
     },
   },
 })
@@ -68,6 +72,7 @@ export default function App() {
                   <Route path="/clientes" element={<ClientsPage />} />
                   <Route path="/clientes/:id" element={<ClientDetailPage />} />
                   <Route path="/tecnicos" element={<TechniciansPage />} />
+                  <Route path="/tecnicos/:id" element={<TechnicianDetailPage />} />
                   <Route path="/pecas" element={<PartsPage />} />
                   <Route path="/relatorios" element={<ReportsPage />} />
                   <Route path="/recebimentos" element={<ReceivablesPage />} />
@@ -75,6 +80,9 @@ export default function App() {
                   <Route path="/ordens/nova" element={<OrderFormPage />} />
                   <Route path="/ordens/:id" element={<OrderDetailPage />} />
                   <Route path="/ordens/:id/editar" element={<OrderFormPage />} />
+                  <Route path="/orcamentos" element={<QuotesPage />} />
+                  <Route path="/orcamentos/novo" element={<QuoteFormPage />} />
+                  <Route path="/orcamentos/:id" element={<QuoteFormPage />} />
                   <Route path="/configuracoes" element={<SettingsPage />} />
                 </Route>
               </Route>

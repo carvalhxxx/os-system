@@ -15,6 +15,7 @@ import { formatCurrency, formatDate, formatDateTime, formatFileSize } from '../.
 import { exportOrderToPDF } from '../../lib/pdf'
 import { OrderItemsPanel } from '../../components/OrderItemsPanel'
 import { PaymentPanel } from '../../components/PaymentPanel'
+import { OrderNotesPanel } from '../../components/OrderNotesPanel'
 import { ShareOrderModal } from '../../components/ShareOrderModal'
 import { useCompanySettings } from '../../hooks/useCompanySettings'
 import toast from 'react-hot-toast'
@@ -429,6 +430,8 @@ export default function OrderDetailPage() {
           {order.status === 'finalizada' && (
             <PaymentPanel order={order} />
           )}
+
+          <OrderNotesPanel orderId={order.id} />
 
           <div className="card p-5">
             <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">

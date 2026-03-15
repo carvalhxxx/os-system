@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ClipboardList, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { usePublicCompanySettings } from '../../hooks/usePublicCompanySettings'
 import toast from 'react-hot-toast'
 
 const schema = z.object({
@@ -18,6 +19,10 @@ export default function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
+  const { data: company } = usePublicCompanySettings()
+
+  const companyName = company?.name || 'OS Manager'
+  const logoUrl = company?.logo_url || null
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -35,17 +40,28 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900">
-      {/* Left panel */}
+      {/* Painel esquerdo */}
       <div className="hidden lg:flex lg:w-1/2 bg-blue-600 flex-col items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-white" />
           <div className="absolute bottom-10 right-10 w-48 h-48 rounded-full bg-white" />
         </div>
         <div className="relative text-center text-white">
-          <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-            <ClipboardList className="w-10 h-10 text-white" />
+          {/* Logo ou ícone padrão */}
+          <div className="mx-auto mb-6">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={companyName}
+                className="w-24 h-24 object-contain mx-auto rounded-2xl bg-white/10 p-2"
+              />
+            ) : (
+              <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mx-auto shadow-xl">
+                <ClipboardList className="w-10 h-10 text-white" />
+              </div>
+            )}
           </div>
-          <h1 className="text-3xl font-bold mb-3">OS Manager</h1>
+          <h1 className="text-3xl font-bold mb-3">{companyName}</h1>
           <p className="text-blue-100 text-lg max-w-xs">
             Gerencie suas ordens de serviço de forma eficiente e profissional.
           </p>
@@ -64,14 +80,19 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel */}
+      {/* Painel direito */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
+          {/* Mobile: logo + nome */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <ClipboardList className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">OS Manager</h1>
+            {logoUrl ? (
+              <img src={logoUrl} alt={companyName} className="w-10 h-10 object-contain rounded-lg" />
+            ) : (
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+                <ClipboardList className="w-5 h-5 text-white" />
+              </div>
+            )}
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{companyName}</h1>
           </div>
 
           <div>

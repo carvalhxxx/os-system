@@ -1,11 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Building2, Phone,  MapPin, FileText, Save } from 'lucide-react'
+import { Building2, Phone, MapPin, FileText, Save, ImagePlus, Trash2 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { companySettingsService } from '../../services/companySettings.service'
+import { supabase } from '../../lib/supabase'
 import { FormField, PageLoader } from '../../components/ui'
 import toast from 'react-hot-toast'
 
@@ -26,6 +27,9 @@ type FormData = z.infer<typeof schema>
 export default function SettingsPage() {
   const { user } = useAuth()
   const qc = useQueryClient()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['company-settings', user?.id],
@@ -40,6 +44,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (settings) {
+      setLogoUrl(settings.logo_url ?? null)
       reset({
         name:     settings.name,
         phone:    settings.phone    ?? '',
@@ -65,7 +70,7 @@ export default function SettingsPage() {
       state:    data.state    || null,
       zip_code: data.zip_code || null,
       website:  data.website  || null,
-      logo_url: settings?.logo_url ?? null,
+      logo_url: logoUrl,
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['company-settings'] })
@@ -73,6 +78,61 @@ export default function SettingsPage() {
     },
     onError: () => toast.error('Erro ao salvar configurações'),
   })
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    setUploadingLogo(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `logos/${user.id}.${ext}`
+      const { error } = await supabase.storage
+        .from('attachments')
+        .upload(path, file, { upsert: true })
+      if (error) throw error
+      const { data } = supabase.storage.from('attachments').getPublicUrl(path)
+      const url = data.publicUrl + '?t=' + Date.now()
+      setLogoUrl(url)
+      await companySettingsService.upsert(user.id, {
+        name: settings?.name || 'Minha Assistência',
+        phone: settings?.phone || null,
+        email: settings?.email || null,
+        document: settings?.document || null,
+        address: settings?.address || null,
+        city: settings?.city || null,
+        state: settings?.state || null,
+        zip_code: settings?.zip_code || null,
+        website: settings?.website || null,
+        logo_url: url,
+      })
+      qc.invalidateQueries({ queryKey: ['company-settings'] })
+      toast.success('Logo atualizada!')
+    } catch {
+      toast.error('Erro ao fazer upload da logo')
+    } finally {
+      setUploadingLogo(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  async function handleLogoRemove() {
+    if (!user) return
+    setLogoUrl(null)
+    await companySettingsService.upsert(user.id, {
+      name: settings?.name || 'Minha Assistência',
+      phone: settings?.phone || null,
+      email: settings?.email || null,
+      document: settings?.document || null,
+      address: settings?.address || null,
+      city: settings?.city || null,
+      state: settings?.state || null,
+      zip_code: settings?.zip_code || null,
+      website: settings?.website || null,
+      logo_url: null,
+    })
+    qc.invalidateQueries({ queryKey: ['company-settings'] })
+    toast.success('Logo removida!')
+  }
 
   if (isLoading) return <PageLoader />
 
@@ -99,6 +159,52 @@ export default function SettingsPage() {
           <FormField label="Nome da Empresa" error={errors.name?.message} required>
             <input {...register('name')} className="input-field" placeholder="Ex: TechFix Assistência Técnica" />
           </FormField>
+
+          {/* Logo */}
+          <div>
+            <label className="label">Logo da Empresa</label>
+            <div className="flex items-center gap-4">
+              {logoUrl ? (
+                <div className="relative group">
+                  <img
+                    src={logoUrl}
+                    alt="Logo"
+                    className="w-20 h-20 object-contain rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleLogoRemove}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 dark:border-slate-600 flex items-center justify-center bg-gray-50 dark:bg-slate-800">
+                  <ImagePlus className="w-7 h-7 text-gray-300 dark:text-slate-600" />
+                </div>
+              )}
+              <div className="space-y-1">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploadingLogo}
+                  className="btn-secondary text-sm"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  {uploadingLogo ? 'Enviando...' : logoUrl ? 'Trocar logo' : 'Enviar logo'}
+                </button>
+                <p className="text-xs text-gray-400 dark:text-slate-500">PNG, JPG ou SVG. Recomendado: 200×200px</p>
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="CNPJ / CPF" error={errors.document?.message}>

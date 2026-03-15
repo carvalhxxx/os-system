@@ -121,14 +121,15 @@ CREATE TABLE IF NOT EXISTS public.order_items (
 CREATE TABLE IF NOT EXISTS public.company_settings (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id      UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  name         TEXT NOT NULL DEFAULT '',
-  phone        TEXT NOT NULL DEFAULT '',
-  email        TEXT NOT NULL DEFAULT '',
-  address      TEXT NOT NULL DEFAULT '',
-  city         TEXT NOT NULL DEFAULT '',
-  state        TEXT NOT NULL DEFAULT '',
-  zip_code     TEXT NOT NULL DEFAULT '',
-  document     TEXT NOT NULL DEFAULT '',
+  name         TEXT NOT NULL DEFAULT 'Minha Assistência',
+  phone        TEXT,
+  email        TEXT,
+  address      TEXT,
+  city         TEXT,
+  state        TEXT,
+  zip_code     TEXT,
+  document     TEXT,  -- CNPJ
+  website      TEXT,
   logo_url     TEXT,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -213,8 +214,9 @@ CREATE OR REPLACE TRIGGER service_orders_updated_at
   BEFORE UPDATE ON public.service_orders FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE OR REPLACE TRIGGER parts_updated_at
   BEFORE UPDATE ON public.parts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE OR REPLACE TRIGGER company_settings_updated_at
-  BEFORE UPDATE ON public.company_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER company_settings_updated_at
+  BEFORE UPDATE ON public.company_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE OR REPLACE TRIGGER quotes_updated_at
   BEFORE UPDATE ON public.quotes FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE OR REPLACE TRIGGER order_notes_updated_at
@@ -388,9 +390,12 @@ CREATE POLICY "order_items_delete" ON public.order_items FOR DELETE USING (
 );
 
 -- company_settings
-CREATE POLICY "settings_select" ON public.company_settings FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "settings_insert" ON public.company_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "settings_update" ON public.company_settings FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "settings_select" ON public.company_settings
+  FOR SELECT USING (true);
+CREATE POLICY "settings_insert" ON public.company_settings
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "settings_update" ON public.company_settings
+  FOR UPDATE USING (auth.uid() = user_id);
 
 -- quotes
 CREATE POLICY "quotes_select" ON public.quotes FOR SELECT USING (auth.uid() = user_id);
@@ -422,6 +427,13 @@ CREATE POLICY "notes_insert" ON public.order_notes FOR INSERT WITH CHECK (
 );
 CREATE POLICY "notes_update" ON public.order_notes FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "notes_delete" ON public.order_notes FOR DELETE USING (auth.uid() = user_id);
+
+
+-- Permite leitura pública de name e logo_url para a tela de login
+-- (sem expor dados sensíveis como CNPJ, endereço, etc.)
+CREATE POLICY "company_settings_public_read" ON company_settings
+  FOR SELECT
+  USING (true);
 
 
 -- ══════════════════════════════════════════════════════════════════════

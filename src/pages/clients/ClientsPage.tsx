@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { clientsService } from '../../services/clients.service'
 import { Client, ClientInsert } from '../../types'
 import { Modal, ConfirmDialog, EmptyState, PageLoader, FormField, Pagination } from '../../components/ui'
-import { formatDate } from '../../lib/utils'
+import { formatDate, maskDocument } from '../../lib/utils'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
@@ -74,7 +74,7 @@ export default function ClientsPage() {
     onError: () => toast.error('Erro ao excluir cliente'),
   })
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
@@ -254,7 +254,15 @@ export default function ClientsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="CPF / CNPJ" error={errors.document?.message} required>
-              <input {...register('document')} className="input-field" placeholder="000.000.000-00" />
+              <input
+                {...register('document')}
+                className="input-field"
+                placeholder="000.000.000-00"
+                onChange={e => {
+                  const masked = maskDocument(e.target.value)
+                  setValue('document', masked, { shouldValidate: true })
+                }}
+              />
             </FormField>
             <FormField label="Email" error={errors.email?.message}>
               <input {...register('email')} type="email" className="input-field" placeholder="email@exemplo.com" />

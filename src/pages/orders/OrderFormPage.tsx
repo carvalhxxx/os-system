@@ -108,6 +108,7 @@ export default function OrderFormPage() {
       qc.invalidateQueries({ queryKey: ['order', id] })
       qc.invalidateQueries({ queryKey: ['dashboard-stats'] })
       toast.success('Ordem atualizada!')
+      navigate('/ordens')
     },
     onError: () => toast.error('Erro ao atualizar ordem'),
   })

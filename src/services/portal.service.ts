@@ -14,7 +14,6 @@ export interface PublicOrderData {
   notes: string | null
   client: {
     name: string
-    phone: string
   }
   technician: {
     name: string
@@ -37,7 +36,7 @@ export const portalService = {
         opened_at,
         closed_at,
         notes,
-        client:clients(name, phone),
+        client:clients(name),
         technician:technicians(name, specialty)
       `)
       .eq('public_token', token)

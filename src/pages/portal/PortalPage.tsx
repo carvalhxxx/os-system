@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   ClipboardList, CheckCircle2, XCircle,
-  Wrench, User, Phone, Calendar, DollarSign,
+  Wrench, User, Calendar, DollarSign,
   AlertCircle, Package,
 } from 'lucide-react'
 import { portalService } from '../../services/portal.service'
@@ -120,6 +120,15 @@ function InfoRow({ icon: Icon, label, value }: {
   )
 }
 
+// Mascara nome: "João da Silva" → "João da S."
+function maskName(name: string): string {
+  const parts = name.trim().split(' ')
+  if (parts.length === 1) return name
+  const first = parts[0]
+  const last = parts[parts.length - 1]
+  return `${first} ${last[0]}.`
+}
+
 export default function PortalPage() {
   const { token } = useParams<{ token: string }>()
 
@@ -199,8 +208,7 @@ export default function PortalPage() {
                 Informações
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoRow icon={User}     label="Cliente"       value={order.client?.name} />
-                <InfoRow icon={Phone}    label="Telefone"      value={order.client?.phone} />
+                <InfoRow icon={User}     label="Cliente"       value={order.client?.name ? maskName(order.client.name) : null} />
                 <InfoRow icon={Calendar} label="Data de Entrada" value={formatDate(order.opened_at)} />
                 <InfoRow icon={Calendar} label="Data de Conclusão" value={order.closed_at ? formatDate(order.closed_at) : 'Em aberto'} />
                 {order.technician && (

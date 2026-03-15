@@ -9,7 +9,6 @@ import { useAuth } from '../../hooks/useAuth'
 import { ordersService } from '../../services/orders.service'
 import { attachmentsService } from '../../services/attachments.service'
 import { orderItemsService } from '../../services/orderItems.service'
-import { OrderStatus } from '../../types'
 import { StatusBadge, PageLoader, ConfirmDialog, Modal } from '../../components/ui'
 import { formatCurrency, formatDate, formatDateTime, formatFileSize } from '../../lib/utils'
 import { exportOrderToPDF } from '../../lib/pdf'
@@ -97,13 +96,6 @@ function DownloadButton({ storagePath, fileName }: { storagePath: string; fileNa
   )
 }
 
-const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
-  { value: 'aberta', label: 'Aberta' },
-  { value: 'em_andamento', label: 'Em Andamento' },
-  { value: 'aguardando_peca', label: 'Aguardando Peça' },
-  { value: 'finalizada', label: 'Finalizada' },
-  { value: 'cancelada', label: 'Cancelada' },
-]
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -131,18 +123,7 @@ export default function OrderDetailPage() {
     enabled: !!id,
   })
 
-  const updateStatusMutation = useMutation({
-    mutationFn: (status: OrderStatus) => ordersService.updateStatus(id!, status),
-    onSuccess: async () => {
-      await qc.refetchQueries({ queryKey: ['order', id] })
-      qc.invalidateQueries({ queryKey: ['orders'] })
-      qc.invalidateQueries({ queryKey: ['dashboard-stats'] })
-      toast.success('Status atualizado!')
-    },
-    onError: (err: Error) => toast.error(err.message || 'Erro ao atualizar status'),
-  })
-
-  const deleteAttachmentMutation = useMutation({
+const deleteAttachmentMutation = useMutation({
     mutationFn: (attachId: string) => {
       const att = order?.attachments?.find(a => a.id === attachId)
       if (!att) throw new Error('Not found')
@@ -219,18 +200,6 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {/* Status: bloqueado se finalizada/cancelada */}
-          {canEdit ? (
-            <select
-              value={order.status}
-              onChange={e => updateStatusMutation.mutate(e.target.value as OrderStatus)}
-              className="input-field w-auto text-sm"
-            >
-              {STATUS_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          ) : null}
 
           <button onClick={handlePrint} className="btn-secondary" title="Abrir PDF para impressão">
             <Printer className="w-4 h-4" /> Imprimir

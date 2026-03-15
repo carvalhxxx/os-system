@@ -38,9 +38,11 @@ export function GlobalSearch() {
   // Atalho de teclado: "/" foca o campo
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      if ((e.key === 'k' && (e.ctrlKey || e.metaKey)) ||
+          (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA')) {
         e.preventDefault()
         inputRef.current?.focus()
+        setOpen(true)
       }
       if (e.key === 'Escape') {
         setOpen(false)

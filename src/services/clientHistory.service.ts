@@ -18,26 +18,21 @@ export interface ClientHistory {
 
 export const clientHistoryService = {
   async getClientHistory(clientId: string): Promise<ClientHistory> {
-    // Busca cliente
-    const { data: client, error: clientError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', clientId)
-      .single()
+    // Busca cliente + todas as OS em paralelo
+    const [clientRes, ordersRes] = await Promise.all([
+      supabase.from('clients').select('*').eq('id', clientId).single(),
+      supabase
+        .from('service_orders')
+        .select('*, technician:technicians(id, name)')
+        .eq('client_id', clientId)
+        .order('opened_at', { ascending: false }),
+    ])
 
-    if (clientError) throw clientError
+    if (clientRes.error) throw clientRes.error
+    if (ordersRes.error) throw ordersRes.error
 
-    // Busca todas as OS do cliente com detalhes
-    const { data: orders, error: ordersError } = await supabase
-      .from('service_orders')
-      .select(`
-        *,
-        technician:technicians(id, name)
-      `)
-      .eq('client_id', clientId)
-      .order('opened_at', { ascending: false })
-
-    if (ordersError) throw ordersError
+    const client = clientRes.data
+    const orders = ordersRes.data
 
     const list = (orders || []) as ServiceOrder[]
 

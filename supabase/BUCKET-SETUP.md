@@ -48,7 +48,7 @@ true
 
 - Cada usuário só consegue fazer upload e deletar arquivos dentro da **própria pasta** (identificada pelo `user_id`)
 - A leitura é pública (`true`), necessário para exibir imagens no navegador sem autenticação
-- A logo da empresa é salva em `logos/{user_id}.{ext}`
+- A logo da empresa é salva em `{user_id}/logo.{ext}`
 - Os anexos das OS são salvos em `{user_id}/{order_id}/{filename}`
 
 ## Verificação

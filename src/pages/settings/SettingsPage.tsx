@@ -85,7 +85,7 @@ export default function SettingsPage() {
     setUploadingLogo(true)
     try {
       const ext = file.name.split('.').pop()
-      const path = `logos/${user.id}.${ext}`
+      const path = `${user.id}/logo.${ext}`
       const { error } = await supabase.storage
         .from('attachments')
         .upload(path, file, { upsert: true })

@@ -138,7 +138,6 @@ export interface Part {
   code: string | null       // Código/referência
   name: string
   unit_price: number
-  stock_qty: number | null  // opcional, para futuro controle de estoque
   notes: string | null
   created_at: string
   updated_at: string

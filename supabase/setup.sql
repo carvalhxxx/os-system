@@ -5,6 +5,14 @@
 -- ══════════════════════════════════════════════════════════════════════
 
 
+-- ─── Configuração de URL (Supabase Dashboard) ────────────────
+-- Authentication → URL Configuration
+-- Site URL: https://seu-projeto.vercel.app
+-- Redirect URLs:
+--   https://seu-projeto.vercel.app/**
+--   http://localhost:5173/**
+
+
 -- ────────────────────────────────────────────────────────────────────
 -- 1. EXTENSÕES
 -- ────────────────────────────────────────────────────────────────────
@@ -101,6 +109,7 @@ CREATE TABLE IF NOT EXISTS public.parts (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   code        TEXT,
+  notes        TEXT,
   name        TEXT NOT NULL,
   description TEXT,
   unit_price  NUMERIC(10,2) NOT NULL DEFAULT 0,

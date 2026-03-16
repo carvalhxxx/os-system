@@ -83,7 +83,6 @@ export default function PartsPage() {
       code: data.code || null,
       name: data.name,
       unit_price: data.unit_price,
-      stock_qty: null,
       notes: data.notes || null,
     }
     if (editTarget) updateMutation.mutate({ id: editTarget.id, data: payload })

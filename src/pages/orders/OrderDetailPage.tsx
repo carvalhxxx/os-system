@@ -259,6 +259,41 @@ const deleteAttachmentMutation = useMutation({
             </div>
           </div>
 
+          {/* Dados do Aparelho */}
+          {(order.device_brand || order.device_model || order.device_imei || order.device_color) && (
+            <div className="card p-6">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide mb-4">
+                Dados do Aparelho
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {order.device_brand && (
+                  <div>
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">Marca</p>
+                    <p className="text-sm font-medium text-gray-800 dark:text-slate-200">{order.device_brand}</p>
+                  </div>
+                )}
+                {order.device_model && (
+                  <div>
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">Modelo</p>
+                    <p className="text-sm font-medium text-gray-800 dark:text-slate-200">{order.device_model}</p>
+                  </div>
+                )}
+                {order.device_color && (
+                  <div>
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">Cor</p>
+                    <p className="text-sm font-medium text-gray-800 dark:text-slate-200">{order.device_color}</p>
+                  </div>
+                )}
+                {order.device_imei && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">IMEI / Nº de Série</p>
+                    <p className="text-sm font-mono text-gray-800 dark:text-slate-200">{order.device_imei}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Descriptions */}
           <div className="card p-6 space-y-5">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide">

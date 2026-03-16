@@ -31,6 +31,11 @@ const schema = z.object({
   opened_at:           z.string().min(1, 'Data de abertura obrigatória'),
   closed_at:           z.string().optional(),
   notes:               z.string().optional(),
+  device_brand:        z.string().optional(),
+  device_model:        z.string().optional(),
+  device_imei:         z.string().optional(),
+  device_color:        z.string().optional(),
+  device_password:     z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -86,6 +91,11 @@ export default function OrderFormPage() {
         opened_at:           order.opened_at?.split('T')[0] || '',
         closed_at:           order.closed_at?.split('T')[0] || '',
         notes:               order.notes || '',
+        device_brand:        order.device_brand || '',
+        device_model:        order.device_model || '',
+        device_imei:         order.device_imei || '',
+        device_color:        order.device_color || '',
+        device_password:     order.device_password || '',
       })
     }
   }, [order, reset])
@@ -158,6 +168,11 @@ export default function OrderFormPage() {
       opened_at:           data.opened_at,
       closed_at:           data.closed_at || null,
       notes:               data.notes || null,
+      device_brand:        data.device_brand || null,
+      device_model:        data.device_model || null,
+      device_imei:         data.device_imei || null,
+      device_color:        data.device_color || null,
+      device_password:     data.device_password || null,
     }
     if (isEditing) {
       updateMutation.mutate(payload)
@@ -252,6 +267,30 @@ export default function OrderFormPage() {
 
           <div className="card p-6 space-y-4">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide">Descrições</h2>
+            {/* Dados do Aparelho */}
+            <div className="card p-5 bg-gray-50 dark:bg-slate-900/50">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">
+                Dados do Aparelho
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Marca">
+                  <input {...register('device_brand')} className="input-field" placeholder="Ex: Samsung, Apple, Motorola..." />
+                </FormField>
+                <FormField label="Modelo">
+                  <input {...register('device_model')} className="input-field" placeholder="Ex: Galaxy A54, iPhone 13..." />
+                </FormField>
+                <FormField label="IMEI / Nº de Série">
+                  <input {...register('device_imei')} className="input-field" placeholder="Ex: 356938035643809" />
+                </FormField>
+                <FormField label="Cor">
+                  <input {...register('device_color')} className="input-field" placeholder="Ex: Preto, Azul, Branco..." />
+                </FormField>
+                <FormField label="Senha / Padrão de desbloqueio">
+                  <input {...register('device_password')} className="input-field" placeholder="Senha de desbloqueio (opcional)" />
+                </FormField>
+              </div>
+            </div>
+
             <FormField label="Descrição do Problema" error={errors.problem_description?.message} required>
               <textarea {...register('problem_description')} rows={3} className="input-field resize-none" placeholder="Descreva o problema relatado pelo cliente..." />
             </FormField>

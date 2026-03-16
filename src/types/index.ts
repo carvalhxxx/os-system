@@ -89,6 +89,12 @@ export interface ServiceOrder {
   opened_at: string
   closed_at: string | null
   notes: string | null
+  // Dados do aparelho
+  device_brand: string | null
+  device_model: string | null
+  device_imei: string | null
+  device_color: string | null
+  device_password: string | null
   created_at: string
   updated_at: string
   // Relations
@@ -116,6 +122,12 @@ export type ServiceOrderInsert = {
   opened_at: string
   closed_at?: string | null
   notes?: string | null
+  // Dados do aparelho
+  device_brand?: string | null
+  device_model?: string | null
+  device_imei?: string | null
+  device_color?: string | null
+  device_password?: string | null
 }
 export type ServiceOrderUpdate = Partial<ServiceOrderInsert>
 

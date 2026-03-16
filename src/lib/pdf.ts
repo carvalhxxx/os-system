@@ -107,6 +107,36 @@ export function exportOrderToPDF(
     margin: { left: 14, right: 14 },
   })
 
+  // ─── Dados do aparelho ───────────────────────────────────
+  const hasDevice = order.device_brand || order.device_model || order.device_imei || order.device_color
+  if (hasDevice) {
+    y = getY(doc) + 8
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text('DADOS DO APARELHO', 14, y)
+
+    const deviceBody: string[][] = []
+    if (order.device_brand || order.device_model)
+      deviceBody.push(['Marca / Modelo', `${order.device_brand || '—'} / ${order.device_model || '—'}`])
+    if (order.device_imei)
+      deviceBody.push(['IMEI / Nº de Série', order.device_imei])
+    if (order.device_color)
+      deviceBody.push(['Cor', order.device_color])
+
+    autoTable(doc, {
+      startY: y + 3,
+      head: [],
+      body: deviceBody,
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        0: { fontStyle: 'bold', fillColor: [243, 244, 246], cellWidth: 50 },
+      },
+      margin: { left: 14, right: 14 },
+    })
+  }
+
   // ─── Peças e materiais ────────────────────────────────────
   if (items.length > 0) {
     y = getY(doc) + 8
@@ -216,6 +246,24 @@ export function exportOrderToPDF(
     doc.text(lines, 14, y + 5)
     y = y + 5 + lines.length * 4.5 + 7
   }
+
+  // ─── Termo de responsabilidade ───────────────────────────
+  const termo = 'Assumo total responsabilidade pelo aparelho acima citado, estando ciente de que serviços de reset e atualização implicam na perda de dados pessoais. A garantia será cancelada em caso de mau uso, queda, danos por líquido ou tentativa de conserto por terceiros. Comprometo-me a retirar o aparelho em até 30 dias; após 90 dias o aparelho poderá ser vendido para cobrir custos.'
+
+  if (y > 230) { doc.addPage(); y = 20 }
+  y = getY(doc) + 10
+
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text('TERMO DE RESPONSABILIDADE', 14, y)
+
+  doc.setFontSize(7.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(80, 80, 80)
+  const termoLines = doc.splitTextToSize(termo, 182)
+  doc.text(termoLines, 14, y + 5)
+  y = y + 5 + termoLines.length * 4 + 6
 
   // ─── Assinaturas ─────────────────────────────────────────
   if (y > 255) { doc.addPage(); y = 20 }

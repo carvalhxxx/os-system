@@ -98,9 +98,10 @@ export const quotesService = {
 
   // ── Itens ──────────────────────────────────────────────────
   async addItem(quoteId: string, item: QuoteItemInsert): Promise<QuoteItem> {
+    const total_price = item.quantity * item.unit_price
     const { data, error } = await supabase
       .from('quote_items')
-      .insert({ ...item, quote_id: quoteId })
+      .insert({ ...item, quote_id: quoteId, total_price })
       .select()
       .single()
     if (error) throw error
@@ -108,7 +109,11 @@ export const quotesService = {
   },
 
   async updateItem(itemId: string, item: Partial<QuoteItemInsert>): Promise<void> {
-    const { error } = await supabase.from('quote_items').update(item).eq('id', itemId)
+    const updates: Record<string, unknown> = { ...item }
+    if (item.quantity !== undefined && item.unit_price !== undefined) {
+      updates.total_price = item.quantity * item.unit_price
+    }
+    const { error } = await supabase.from('quote_items').update(updates).eq('id', itemId)
     if (error) throw error
   },
 

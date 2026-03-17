@@ -57,13 +57,14 @@ export function exportOrderToPDF(
   const colRightCenter = (colRight + pageW - margin) / 2  // ~163
 
   // Logo (se houver)
+  let hasLogo = false
   if (company?.logo_url) {
     try {
       doc.addImage(company.logo_url, 'PNG', colLeft, 13, 20, 20)
+      hasLogo = true
     } catch (_) { /* sem logo */ }
   }
 
-  const hasLogo = !!company?.logo_url
   const textX = hasLogo ? colLeft + 24 : colLeft
 
   // Nome da empresa
@@ -232,23 +233,7 @@ export function exportOrderToPDF(
         4: { halign: 'right', cellWidth: 28 },
       },
       margin: { left: margin, right: margin },
-      didDrawCell(data) {
-        if (data.section === 'head' && data.column.index === 0) {
-          doc.setDrawColor(...C.light)
-          doc.setLineWidth(0.3)
-          doc.line(margin, data.row.y + data.row.height, pageW - margin, data.row.y + data.row.height)
-        }
-        if (data.section === 'foot' && data.row.index === 0 && data.column.index === 0) {
-          doc.setDrawColor(...C.ultralight)
-          doc.setLineWidth(0.2)
-          doc.line(margin, data.row.y, pageW - margin, data.row.y)
-        }
-        if (data.section === 'foot' && data.row.index === 1 && data.column.index === 0) {
-          doc.setDrawColor(...C.light)
-          doc.setLineWidth(0.4)
-          doc.line(margin, data.row.y, pageW - margin, data.row.y)
-        }
-      },
+
     })
   } else {
     y = getY(doc) + 7
@@ -356,11 +341,11 @@ export function exportQuoteToPDF(
   const colRight = 130
   const colRightCenter = (colRight + pageW - margin) / 2
 
+  let hasLogo = false
   if (company?.logo_url) {
-    try { doc.addImage(company.logo_url, 'PNG', colLeft, 13, 20, 20) } catch (_) { /* sem logo */ }
+    try { doc.addImage(company.logo_url, 'PNG', colLeft, 13, 20, 20); hasLogo = true } catch (_) { /* sem logo */ }
   }
 
-  const hasLogo = !!company?.logo_url
   const textX = hasLogo ? colLeft + 24 : colLeft
 
   doc.setFontSize(15)
@@ -453,13 +438,7 @@ export function exportQuoteToPDF(
         3: { halign: 'right', cellWidth: 35 },
       },
       margin: { left: margin, right: margin },
-      didDrawCell(data) {
-        if (data.section === 'head' && data.column.index === 0) {
-          doc.setDrawColor(...C.light)
-          doc.setLineWidth(0.3)
-          doc.line(margin, data.row.y + data.row.height, pageW - margin, data.row.y + data.row.height)
-        }
-      },
+
     })
   }
 

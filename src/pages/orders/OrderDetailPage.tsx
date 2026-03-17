@@ -163,7 +163,7 @@ const deleteAttachmentMutation = useMutation({
     }
   }
 
-  const handlePrint = () => { if (order) exportOrderToPDF(order, orderItems, 'print', company) }
+  const handlePrint = () => { if (!order) return; try { exportOrderToPDF(order, orderItems, 'print', company) } catch (e) { console.error(e); toast.error('Erro ao gerar PDF') } }
 
   if (isLoading || !order) return <PageLoader />
 
@@ -204,7 +204,7 @@ const deleteAttachmentMutation = useMutation({
           <button onClick={handlePrint} className="btn-secondary" title="Abrir PDF para impressão">
             <Printer className="w-4 h-4" /> Imprimir
           </button>
-          <button onClick={() => exportOrderToPDF(order, orderItems, 'download', company)} className="btn-secondary" title="Baixar PDF">
+          <button onClick={() => { try { exportOrderToPDF(order, orderItems, 'download', company) } catch (e) { console.error(e); toast.error('Erro ao gerar PDF') } }} className="btn-secondary" title="Baixar PDF">
             <Download className="w-4 h-4" /> PDF
           </button>
           <button onClick={() => setShareOpen(true)} className="btn-secondary" title="Enviar para cliente">

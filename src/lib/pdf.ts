@@ -9,6 +9,34 @@ function getY(doc: jsPDF): number {
   return (doc as DocWithTable).lastAutoTable?.finalY ?? 0
 }
 
+// Paleta vintage — sem cores sólidas, só preto/cinza
+const C = {
+  black:    [20, 20, 20]   as [number, number, number],
+  dark:     [50, 50, 50]   as [number, number, number],
+  mid:      [100, 100, 100] as [number, number, number],
+  light:    [170, 170, 170] as [number, number, number],
+  ultralight: [230, 230, 230] as [number, number, number],
+  white:    [255, 255, 255] as [number, number, number],
+}
+
+// Desenha título de seção estilo vintage (linha + texto + linha)
+function sectionTitle(doc: jsPDF, text: string, y: number) {
+  const pageW = 210
+  const margin = 14
+  doc.setDrawColor(...C.mid)
+  doc.setLineWidth(0.3)
+  doc.line(margin, y, pageW - margin, y)
+  doc.setFillColor(...C.white)
+  const textW = doc.getTextWidth(text) + 6
+  const cx = pageW / 2
+  doc.rect(cx - textW / 2, y - 3.5, textW, 5, 'F')
+  doc.setFontSize(7.5)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...C.mid)
+  doc.text(text, cx, y, { align: 'center' })
+  doc.setTextColor(...C.black)
+}
+
 export function exportOrderToPDF(
   order: ServiceOrder,
   items: OrderItem[] = [],
@@ -17,211 +45,220 @@ export function exportOrderToPDF(
 ): void {
   const doc = new jsPDF()
   const companyName = company?.name || 'OS Manager'
+  const pageW = 210
+  const margin = 14
+
 
   // ─── Header ──────────────────────────────────────────────
-  doc.setFillColor(37, 99, 235)
-  doc.rect(0, 0, 210, 32, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(16)
-  doc.setFont('helvetica', 'bold')
-  doc.text(companyName.toUpperCase(), 14, 13)
+  // Coluna esquerda: logo + dados da empresa (até x=120)
+  // Coluna direita: caixa OS (x=130 até x=196)
+  const colLeft  = margin          // 14
+  const colRight = 130             // início da caixa OS
+  const colRightCenter = (colRight + pageW - margin) / 2  // ~163
 
-  // Dados da empresa abaixo do nome
-  const companyLines: string[] = []
-  if (company?.phone || company?.email)
-    companyLines.push([company.phone, company.email].filter(Boolean).join('  |  '))
-  if (company?.address || company?.city)
-    companyLines.push([company.address, company.city, company.state].filter(Boolean).join(', '))
-  if (company?.document)
-    companyLines.push(`CNPJ: ${company.document}`)
+  // Logo (se houver)
+  if (company?.logo_url) {
+    try {
+      doc.addImage(company.logo_url, 'PNG', colLeft, 13, 20, 20)
+    } catch (_) { /* sem logo */ }
+  }
+
+  const hasLogo = !!company?.logo_url
+  const textX = hasLogo ? colLeft + 24 : colLeft
+
+  // Nome da empresa
+  doc.setFontSize(15)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...C.black)
+  doc.text(companyName.toUpperCase(), textX, 20)
+
+  // Dados da empresa
+  doc.setFontSize(7.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...C.mid)
+  let infoY = 25
+  if (company?.phone || company?.email) {
+    doc.text([company.phone, company.email].filter(Boolean).join('   |   '), textX, infoY)
+    infoY += 4
+  }
+  if (company?.address || company?.city) {
+    doc.text([company.address, company.city, company.state].filter(Boolean).join(', '), textX, infoY)
+    infoY += 4
+  }
+  if (company?.document) {
+    doc.text(`CNPJ: ${company.document}`, textX, infoY)
+    infoY += 4
+  }
+
+  // Linha separadora vertical entre colunas
+  doc.setDrawColor(...C.ultralight)
+  doc.setLineWidth(0.3)
+  doc.line(colRight - 4, 13, colRight - 4, 38)
+
+  // Caixa OS (coluna direita)
+  doc.setDrawColor(...C.light)
+  doc.setLineWidth(0.3)
+  doc.rect(colRight, 13, pageW - margin - colRight, 18)
 
   doc.setFontSize(7.5)
   doc.setFont('helvetica', 'normal')
-  companyLines.forEach((line, i) => {
-    doc.text(line, 14, 19 + i * 4.5)
-  })
+  doc.setTextColor(...C.mid)
+  doc.text('ORDEM DE SERVIÇO', colRightCenter, 19, { align: 'center' })
 
-  // Número da OS e data à direita
   doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text(order.order_number, 196, 13, { align: 'right' })
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`Emitido em: ${formatDateTime(new Date().toISOString())}`, 196, 19, { align: 'right' })
+  doc.setTextColor(...C.black)
+  doc.text(order.order_number, colRightCenter, 27, { align: 'center' })
 
-  // ─── Status ───────────────────────────────────────────────
-  doc.setTextColor(37, 99, 235)
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'bold')
-  doc.text(`Status: ${STATUS_LABELS[order.status]}`, 14, 44)
+  // Linha separadora geral abaixo do header
+  doc.setDrawColor(...C.light)
+  doc.setLineWidth(0.3)
+  doc.line(margin, 36, pageW - margin, 36)
+
+  // Emissão e status abaixo da linha
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...C.mid)
+  doc.text(`Emitido: ${formatDateTime(new Date().toISOString())}`, pageW - margin, 40, { align: 'right' })
+  doc.text(`Status: ${STATUS_LABELS[order.status]}`, margin, 40)
 
   // ─── Dados do cliente ─────────────────────────────────────
-  doc.setTextColor(0, 0, 0)
-  doc.setFontSize(11)
-  doc.text('DADOS DO CLIENTE', 14, 52)
+  let y = 44
+  sectionTitle(doc, 'DADOS DO CLIENTE', y)
+  y += 4
 
   if (order.client) {
     autoTable(doc, {
-      startY: 55,
+      startY: y,
       head: [],
       body: [
-        ['Nome', order.client.name, 'Documento', order.client.document],
+        ['Nome', order.client.name, 'CPF/CNPJ', order.client.document],
         ['Telefone', order.client.phone, 'Email', order.client.email || '—'],
-        [
-          'Endereço',
-          [order.client.address, order.client.city, order.client.state]
-            .filter(Boolean).join(', ') || '—',
-          '', '',
-        ],
+        ['Endereço', [order.client.address, order.client.city, order.client.state].filter(Boolean).join(', ') || '—', '', ''],
       ],
-      theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 3 },
+      theme: 'plain',
+      styles: { fontSize: 8.5, cellPadding: 2.5, textColor: C.dark, lineWidth: 0 },
       columnStyles: {
-        0: { fontStyle: 'bold', fillColor: [243, 244, 246], cellWidth: 28 },
-        2: { fontStyle: 'bold', fillColor: [243, 244, 246], cellWidth: 28 },
+        0: { fontStyle: 'bold', cellWidth: 22, textColor: C.mid },
+        2: { fontStyle: 'bold', cellWidth: 22, textColor: C.mid },
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: margin, right: margin },
     })
   }
 
   // ─── Detalhes da OS ───────────────────────────────────────
-  let y = getY(doc) + 8
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('DETALHES DA ORDEM', 14, y)
+  y = getY(doc) + 7
+  sectionTitle(doc, 'DETALHES DA ORDEM', y)
+  y += 4
 
   autoTable(doc, {
-    startY: y + 3,
+    startY: y,
     head: [],
     body: [
       ['Funcionário', order.technician?.name || 'Não atribuído', 'Abertura', formatDate(order.opened_at)],
-      ['Mão de Obra', formatCurrency(order.labor_value ?? 0), 'Conclusão', formatDate(order.closed_at)],
+      ['Mão de Obra', formatCurrency(order.labor_value ?? 0), 'Previsão / Conclusão', formatDate(order.closed_at)],
     ],
-    theme: 'grid',
-    styles: { fontSize: 9, cellPadding: 3 },
+    theme: 'plain',
+    styles: { fontSize: 8.5, cellPadding: 2.5, textColor: C.dark, lineColor: C.ultralight, lineWidth: 0.2 },
     columnStyles: {
-      0: { fontStyle: 'bold', fillColor: [243, 244, 246], cellWidth: 32 },
-      2: { fontStyle: 'bold', fillColor: [243, 244, 246], cellWidth: 32 },
+      0: { fontStyle: 'bold', cellWidth: 30, textColor: C.mid },
+      2: { fontStyle: 'bold', cellWidth: 40, textColor: C.mid },
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: margin, right: margin },
   })
 
-  // ─── Dados do aparelho ───────────────────────────────────
+  // ─── Dados do aparelho ────────────────────────────────────
   const hasDevice = order.device_brand || order.device_model || order.device_imei || order.device_color
   if (hasDevice) {
-    y = getY(doc) + 8
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('DADOS DO APARELHO', 14, y)
+    y = getY(doc) + 7
+    sectionTitle(doc, 'DADOS DO APARELHO', y)
+    y += 4
 
     const deviceBody: string[][] = []
     if (order.device_brand || order.device_model)
-      deviceBody.push(['Marca / Modelo', `${order.device_brand || '—'} / ${order.device_model || '—'}`])
+      deviceBody.push(['Marca / Modelo', `${order.device_brand || '—'} / ${order.device_model || '—'}`, 'Cor', order.device_color || '—'])
     if (order.device_imei)
-      deviceBody.push(['IMEI / Nº de Série', order.device_imei])
-    if (order.device_color)
-      deviceBody.push(['Cor', order.device_color])
+      deviceBody.push(['IMEI / Nº Série', order.device_imei, '', ''])
 
     autoTable(doc, {
-      startY: y + 3,
+      startY: y,
       head: [],
       body: deviceBody,
-      theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 3 },
+      theme: 'plain',
+      styles: { fontSize: 8.5, cellPadding: 2.5, textColor: C.dark, lineWidth: 0 },
       columnStyles: {
-        0: { fontStyle: 'bold', fillColor: [243, 244, 246], cellWidth: 50 },
+        0: { fontStyle: 'bold', cellWidth: 30, textColor: C.mid },
+        2: { fontStyle: 'bold', cellWidth: 20, textColor: C.mid },
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: margin, right: margin },
     })
   }
 
   // ─── Peças e materiais ────────────────────────────────────
   if (items.length > 0) {
-    y = getY(doc) + 8
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('PEÇAS E MATERIAIS', 14, y)
-
-    const partsBody = items.map(item => [
-      item.part?.code || '—',
-      item.part?.name || '—',
-      String(item.quantity),
-      formatCurrency(item.unit_price),
-      formatCurrency(item.total_price),
-    ])
+    y = getY(doc) + 7
+    sectionTitle(doc, 'PEÇAS E MATERIAIS', y)
+    y += 4
 
     const partsTotal = items.reduce((sum, i) => sum + i.total_price, 0)
     const laborValue = order.labor_value ?? 0
     const grandTotal = partsTotal + laborValue
 
     autoTable(doc, {
-      startY: y + 3,
+      startY: y,
       head: [['Código', 'Descrição', 'Qtd', 'Vlr. Unit.', 'Subtotal']],
-      body: partsBody,
+      body: items.map(item => [
+        item.part?.code || '—',
+        item.part?.name || '—',
+        String(item.quantity),
+        formatCurrency(item.unit_price),
+        formatCurrency(item.total_price),
+      ]),
       foot: [
-        [
-          { content: 'Mão de obra', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fillColor: [249, 250, 251] } },
-          { content: formatCurrency(laborValue), styles: { fontStyle: 'bold', fillColor: [249, 250, 251] } },
-        ],
-        [
-          { content: 'Total peças', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fillColor: [249, 250, 251] } },
-          { content: formatCurrency(partsTotal), styles: { fontStyle: 'bold', fillColor: [249, 250, 251] } },
-        ],
-        [
-          {
-            content: 'TOTAL GERAL',
-            colSpan: 4,
-            styles: { halign: 'right', fontStyle: 'bold', fillColor: [37, 99, 235], textColor: [255, 255, 255] },
-          },
-          {
-            content: formatCurrency(grandTotal),
-            styles: { fontStyle: 'bold', fillColor: [37, 99, 235], textColor: [255, 255, 255] },
-          },
-        ],
+        [{ content: `Mão de obra: ${formatCurrency(laborValue)}`, colSpan: 3, styles: { halign: 'right', fontStyle: 'normal', textColor: C.mid } },
+         { content: 'Total peças:', styles: { fontStyle: 'bold', halign: 'right', textColor: C.dark } },
+         { content: formatCurrency(partsTotal), styles: { fontStyle: 'bold', textColor: C.dark } }],
+        [{ content: 'TOTAL GERAL', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 10, textColor: C.black } },
+         { content: formatCurrency(grandTotal), styles: { fontStyle: 'bold', fontSize: 10, textColor: C.black } }],
       ],
-      theme: 'striped',
-      headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
-      footStyles: { fontSize: 9 },
-      styles: { fontSize: 9, cellPadding: 3 },
+      theme: 'plain',
+      headStyles: { fillColor: false, textColor: C.mid, fontStyle: 'bold', fontSize: 8, lineColor: C.light, lineWidth: 0.2 },
+      footStyles: { fontSize: 8.5, lineWidth: 0 },
+      styles: { fontSize: 8.5, cellPadding: 2.5, textColor: C.dark, lineWidth: 0 },
       columnStyles: {
         0: { cellWidth: 25 },
         2: { halign: 'center', cellWidth: 14 },
         3: { halign: 'right', cellWidth: 28 },
         4: { halign: 'right', cellWidth: 28 },
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: margin, right: margin },
+      didDrawCell(data) {
+        if (data.section === 'head' && data.column.index === 0) {
+          doc.setDrawColor(...C.light)
+          doc.setLineWidth(0.3)
+          doc.line(margin, data.row.y + data.row.height, pageW - margin, data.row.y + data.row.height)
+        }
+        if (data.section === 'foot' && data.row.index === 0 && data.column.index === 0) {
+          doc.setDrawColor(...C.ultralight)
+          doc.setLineWidth(0.2)
+          doc.line(margin, data.row.y, pageW - margin, data.row.y)
+        }
+        if (data.section === 'foot' && data.row.index === 1 && data.column.index === 0) {
+          doc.setDrawColor(...C.light)
+          doc.setLineWidth(0.4)
+          doc.line(margin, data.row.y, pageW - margin, data.row.y)
+        }
+      },
     })
   } else {
-    // Sem peças: exibe apenas o valor total
-    y = getY(doc) + 8
-    autoTable(doc, {
-      startY: y,
-      head: [],
-      body: [
-        [
-          {
-            content: `VALOR TOTAL: ${formatCurrency(order.service_value)}`,
-            styles: {
-              halign: 'right',
-              fontStyle: 'bold',
-              fontSize: 11,
-              fillColor: [37, 99, 235],
-              textColor: [255, 255, 255],
-            },
-          },
-        ],
-      ],
-      theme: 'plain',
-      margin: { left: 14, right: 14 },
-    })
+    y = getY(doc) + 7
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...C.black)
+    doc.text(`VALOR TOTAL: ${formatCurrency(order.service_value)}`, pageW - margin, y, { align: 'right' })
   }
 
   // ─── Seções de texto ──────────────────────────────────────
-  y = getY(doc) + 8
-
   const sections = [
     { title: 'DESCRIÇÃO DO PROBLEMA', text: order.problem_description },
     { title: 'DIAGNÓSTICO',           text: order.diagnosis },
@@ -231,62 +268,60 @@ export function exportOrderToPDF(
 
   for (const section of sections) {
     if (!section.text) continue
-
+    y = getY(doc) + 7
     if (y > 250) { doc.addPage(); y = 20 }
-
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text(section.title, 14, y)
-
-    doc.setFontSize(9)
+    sectionTitle(doc, section.title, y)
+    y += 5
+    doc.setFontSize(8.5)
     doc.setFont('helvetica', 'normal')
-    doc.setTextColor(50, 50, 50)
-    const lines = doc.splitTextToSize(section.text, 182)
-    doc.text(lines, 14, y + 5)
-    y = y + 5 + lines.length * 4.5 + 7
+    doc.setTextColor(...C.dark)
+    const lines = doc.splitTextToSize(section.text, pageW - margin * 2)
+    doc.text(lines, margin, y)
+    ;(doc as DocWithTable).lastAutoTable = { finalY: y + lines.length * 4.5 }
   }
 
   // ─── Termo de responsabilidade ───────────────────────────
-  const termo = 'Assumo total responsabilidade pelo aparelho acima citado, estando ciente de que serviços de reset e atualização implicam na perda de dados pessoais. A garantia será cancelada em caso de mau uso, queda, danos por líquido ou tentativa de conserto por terceiros. Comprometo-me a retirar o aparelho em até 30 dias; após 90 dias o aparelho poderá ser vendido para cobrir custos.'
+  const termo = 'Assumo total responsabilidade pelo aparelho acima citado, estando ciente de que serviços de reset e atualização implicam na perda de dados pessoais contidos no aparelho. A garantia será cancelada em caso de mau uso, queda, exposição à umidade, danos elétricos ou tentativa de conserto por terceiros não autorizados. Comprometo-me a retirar o aparelho em até 30 (trinta) dias; após 90 (noventa) dias o aparelho poderá ser vendido para cobrir custos.'
 
-  if (y > 230) { doc.addPage(); y = 20 }
-  y = getY(doc) + 10
-
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('TERMO DE RESPONSABILIDADE', 14, y)
+  y = getY(doc) + 7
+  if (y > 235) { doc.addPage(); y = 20 }
+  sectionTitle(doc, 'TERMO DE RESPONSABILIDADE', y)
+  y += 5
 
   doc.setFontSize(7.5)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(80, 80, 80)
-  const termoLines = doc.splitTextToSize(termo, 182)
-  doc.text(termoLines, 14, y + 5)
-  y = y + 5 + termoLines.length * 4 + 6
+  doc.setFont('helvetica', 'italic')
+  doc.setTextColor(...C.mid)
+  const termoLines = doc.splitTextToSize(termo, pageW - margin * 2)
+  doc.text(termoLines, margin, y)
+  y = y + termoLines.length * 3.8 + 8
 
   // ─── Assinaturas ─────────────────────────────────────────
-  if (y > 255) { doc.addPage(); y = 20 }
+  if (y > 260) { doc.addPage(); y = 20 }
+  doc.setDrawColor(...C.light)
+  doc.setLineWidth(0.3)
+  doc.line(margin, y, margin + 72, y)
+  doc.line(pageW - margin - 72, y, pageW - margin, y)
+  doc.setFontSize(7.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...C.light)
+  doc.text('Assinatura do Cliente', margin + 36, y + 4.5, { align: 'center' })
+  doc.text('Assinatura do Funcionário', pageW - margin - 36, y + 4.5, { align: 'center' })
 
-  y += 10
-  doc.setDrawColor(180, 180, 180)
-  doc.line(14, y, 90, y)
-  doc.line(120, y, 196, y)
-  doc.setFontSize(8)
-  doc.setTextColor(130, 130, 130)
-  doc.text('Assinatura do Cliente', 52, y + 5, { align: 'center' })
-  doc.text('Assinatura do Funcionário', 158, y + 5, { align: 'center' })
+  // Data
+  doc.setTextColor(...C.mid)
+  doc.text(`______/______/________`, pageW / 2, y, { align: 'center' })
+  doc.setFontSize(7)
+  doc.text('Data', pageW / 2, y + 4.5, { align: 'center' })
 
   // ─── Rodapé em todas as páginas ───────────────────────────
-  const pageCount = (doc as jsPDF & { internal: { getNumberOfPages: () => number } })
-    .internal.getNumberOfPages()
-
+  const pageCount = (doc as jsPDF & { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages()
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
     doc.setFontSize(7)
-    doc.setTextColor(160, 160, 160)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...C.light)
     doc.text(companyName, 105, 290, { align: 'center' })
-    doc.text(`Página ${i} de ${pageCount}`, 196, 290, { align: 'right' })
+    doc.text(`Página ${i} de ${pageCount}`, pageW - margin, 290, { align: 'right' })
   }
 
   if (mode === 'print') {
@@ -294,12 +329,7 @@ export function exportOrderToPDF(
     const url = URL.createObjectURL(blob)
     const win = window.open(url, '_blank')
     if (win) {
-      win.onload = () => {
-        win.focus()
-        win.print()
-        // Libera o blob após um tempo para o navegador processar
-        setTimeout(() => URL.revokeObjectURL(url), 60000)
-      }
+      win.onload = () => { win.focus(); win.print(); setTimeout(() => URL.revokeObjectURL(url), 60000) }
     }
   } else {
     doc.save(`${order.order_number}.pdf`)
@@ -318,150 +348,165 @@ export function exportQuoteToPDF(
 ): void {
   const doc = new jsPDF()
   const companyName = company?.name || 'OS Manager'
+  const pageW = 210
+  const margin = 14
 
   // ─── Header ──────────────────────────────────────────────
-  doc.setFillColor(16, 185, 129) // verde (orçamento)
-  doc.rect(0, 0, 210, 32, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(16)
-  doc.setFont('helvetica', 'bold')
-  doc.text(companyName.toUpperCase(), 14, 13)
+  const colLeft  = margin
+  const colRight = 130
+  const colRightCenter = (colRight + pageW - margin) / 2
 
-  const companyLines: string[] = []
-  if (company?.phone || company?.email)
-    companyLines.push([company.phone, company.email].filter(Boolean).join('  |  '))
-  if (company?.address)
-    companyLines.push([company.address, company.city, company.state].filter(Boolean).join(', '))
-  if (company?.document)
-    companyLines.push(`CNPJ: ${company.document}`)
+  if (company?.logo_url) {
+    try { doc.addImage(company.logo_url, 'PNG', colLeft, 13, 20, 20) } catch (_) { /* sem logo */ }
+  }
+
+  const hasLogo = !!company?.logo_url
+  const textX = hasLogo ? colLeft + 24 : colLeft
+
+  doc.setFontSize(15)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...C.black)
+  doc.text(companyName.toUpperCase(), textX, 20)
 
   doc.setFontSize(7.5)
   doc.setFont('helvetica', 'normal')
-  companyLines.forEach((line, i) => doc.text(line, 14, 19 + i * 4.5))
+  doc.setTextColor(...C.mid)
+  let infoY = 25
+  if (company?.phone || company?.email) { doc.text([company.phone, company.email].filter(Boolean).join('   |   '), textX, infoY); infoY += 4 }
+  if (company?.address || company?.city) { doc.text([company.address, company.city, company.state].filter(Boolean).join(', '), textX, infoY); infoY += 4 }
+  if (company?.document) { doc.text(`CNPJ: ${company.document}`, textX, infoY) }
+
+  doc.setDrawColor(...C.ultralight)
+  doc.setLineWidth(0.3)
+  doc.line(colRight - 4, 13, colRight - 4, 38)
+
+  doc.setDrawColor(...C.light)
+  doc.setLineWidth(0.3)
+  doc.rect(colRight, 13, pageW - margin - colRight, 18)
+
+  doc.setFontSize(7.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...C.mid)
+  doc.text('ORÇAMENTO', colRightCenter, 19, { align: 'center' })
 
   doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text(quote.quote_number, 196, 13, { align: 'right' })
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`Emitido em: ${formatDateTime(new Date().toISOString())}`, 196, 19, { align: 'right' })
+  doc.setTextColor(...C.black)
+  doc.text(quote.quote_number, colRightCenter, 27, { align: 'center' })
 
-  // ─── Título ───────────────────────────────────────────────
-  doc.setTextColor(16, 185, 129)
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'bold')
-  doc.text('ORÇAMENTO', 14, 44)
+  doc.setDrawColor(...C.light)
+  doc.setLineWidth(0.3)
+  doc.line(margin, 36, pageW - margin, 36)
+
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...C.mid)
+  doc.text(`Emitido: ${formatDateTime(new Date().toISOString())}`, pageW - margin, 40, { align: 'right' })
 
   // ─── Cliente ──────────────────────────────────────────────
-  doc.setTextColor(0, 0, 0)
-  doc.setFontSize(11)
-  doc.text('DADOS DO CLIENTE', 14, 52)
+  let y = 44
+  sectionTitle(doc, 'DADOS DO CLIENTE', y)
+  y += 4
 
-  const clientRows: string[][] = []
   if (quote.client) {
-    clientRows.push(['Nome', quote.client.name])
-    if (quote.client.phone || quote.client.email)
-      clientRows.push(['Contato', [quote.client.phone, quote.client.email].filter(Boolean).join('  |  ')])
+    autoTable(doc, {
+      startY: y,
+      head: [],
+      body: [
+        ['Nome', quote.client.name],
+        ['Contato', [quote.client.phone, quote.client.email].filter(Boolean).join('   |   ')],
+      ],
+      theme: 'plain',
+      styles: { fontSize: 8.5, cellPadding: 2.5, textColor: C.dark, lineWidth: 0 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 22, textColor: C.mid } },
+      margin: { left: margin, right: margin },
+    })
   }
 
-  autoTable(doc, {
-    startY: 55,
-    head: [],
-    body: clientRows,
-    theme: 'plain',
-    styles: { fontSize: 9, cellPadding: 2 },
-    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 30, textColor: [100, 100, 100] } },
-  })
-
   // ─── Descrição ────────────────────────────────────────────
-  let y = getY(doc) + 8
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
-  doc.text('DESCRIÇÃO DO SERVIÇO', 14, y)
-
-  autoTable(doc, {
-    startY: y + 3,
-    head: [],
-    body: [[quote.description]],
-    theme: 'plain',
-    styles: { fontSize: 9, cellPadding: 3 },
-  })
+  y = getY(doc) + 7
+  sectionTitle(doc, 'DESCRIÇÃO DO SERVIÇO', y)
+  y += 5
+  doc.setFontSize(8.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...C.dark)
+  const descLines = doc.splitTextToSize(quote.description, pageW - margin * 2)
+  doc.text(descLines, margin, y)
+  ;(doc as DocWithTable).lastAutoTable = { finalY: y + descLines.length * 4.5 }
 
   // ─── Itens ────────────────────────────────────────────────
   if (quote.items?.length) {
-    y = getY(doc) + 8
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
-    doc.text('PEÇAS / MATERIAIS', 14, y)
+    y = getY(doc) + 7
+    sectionTitle(doc, 'PEÇAS / MATERIAIS', y)
+    y += 4
 
     autoTable(doc, {
-      startY: y + 3,
+      startY: y,
       head: [['Item', 'Qtd', 'Preço Unit.', 'Total']],
-      body: quote.items.map(item => [
-        item.name,
-        item.quantity.toString(),
-        formatCurrency(item.unit_price),
-        formatCurrency(item.total_price),
-      ]),
-      theme: 'striped',
-      headStyles: { fillColor: [16, 185, 129], fontSize: 9, fontStyle: 'bold' },
-      styles: { fontSize: 9, cellPadding: 3 },
+      body: quote.items.map(item => [item.name, item.quantity.toString(), formatCurrency(item.unit_price), formatCurrency(item.total_price)]),
+      theme: 'plain',
+      headStyles: { fillColor: false, textColor: C.mid, fontStyle: 'bold', fontSize: 8, lineColor: C.light, lineWidth: 0.2 },
+      styles: { fontSize: 8.5, cellPadding: 2.5, textColor: C.dark, lineWidth: 0 },
       columnStyles: {
-        0: { cellWidth: 'auto' },
         1: { halign: 'center', cellWidth: 20 },
         2: { halign: 'right', cellWidth: 35 },
         3: { halign: 'right', cellWidth: 35 },
+      },
+      margin: { left: margin, right: margin },
+      didDrawCell(data) {
+        if (data.section === 'head' && data.column.index === 0) {
+          doc.setDrawColor(...C.light)
+          doc.setLineWidth(0.3)
+          doc.line(margin, data.row.y + data.row.height, pageW - margin, data.row.y + data.row.height)
+        }
       },
     })
   }
 
   // ─── Totais ───────────────────────────────────────────────
-  y = getY(doc) + 8
+  y = getY(doc) + 7
+  sectionTitle(doc, 'VALORES', y)
+  y += 4
+
   autoTable(doc, {
     startY: y,
     head: [],
     body: [
       ['Mão de obra', formatCurrency(quote.labor_value)],
       ['Peças / Materiais', formatCurrency(quote.parts_total)],
-      ['TOTAL', formatCurrency(quote.total_value)],
+      ['TOTAL GERAL', formatCurrency(quote.total_value)],
     ],
     theme: 'plain',
-    styles: { fontSize: 10, cellPadding: 3 },
-    columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 100 },
-      1: { halign: 'right' },
-    },
+    styles: { fontSize: 9, cellPadding: 2.5, textColor: C.dark, lineColor: C.ultralight, lineWidth: 0.15 },
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 100, textColor: C.mid }, 1: { halign: 'right' } },
     didParseCell(data) {
       if (data.row.index === 2) {
-        data.cell.styles.fontSize = 12
+        data.cell.styles.fontSize = 11
         data.cell.styles.fontStyle = 'bold'
-        data.cell.styles.textColor = [16, 185, 129]
+        data.cell.styles.textColor = C.black
       }
     },
+    margin: { left: margin, right: margin },
   })
 
   // ─── Observações ──────────────────────────────────────────
   if (quote.notes) {
-    y = getY(doc) + 8
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('OBSERVAÇÕES', 14, y)
-    autoTable(doc, {
-      startY: y + 3,
-      head: [],
-      body: [[quote.notes]],
-      theme: 'plain',
-      styles: { fontSize: 9, cellPadding: 3 },
-    })
+    y = getY(doc) + 7
+    sectionTitle(doc, 'OBSERVAÇÕES', y)
+    y += 5
+    doc.setFontSize(8.5)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...C.dark)
+    const noteLines = doc.splitTextToSize(quote.notes, pageW - margin * 2)
+    doc.text(noteLines, margin, y)
   }
 
   // ─── Rodapé ───────────────────────────────────────────────
-  const pageH = doc.internal.pageSize.height
-  doc.setFontSize(8)
+  doc.setFontSize(7.5)
   doc.setFont('helvetica', 'italic')
-  doc.setTextColor(150, 150, 150)
-  doc.text('Este orçamento não tem valor fiscal.', 105, pageH - 10, { align: 'center' })
+  doc.setTextColor(...C.light)
+  doc.text('Este orçamento não tem valor fiscal.', 105, 287, { align: 'center' })
+  doc.text(companyName, 105, 290, { align: 'center' })
 
   if (mode === 'download') {
     doc.save(`${quote.quote_number}.pdf`)

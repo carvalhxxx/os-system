@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Search, Edit2, Trash2, Package } from 'lucide-react'
+import { Plus, Search, Edit2, Trash2, Package, Eye } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { partsService } from '../../services/parts.service'
 import { Part, PartInsert } from '../../types'
@@ -11,6 +11,7 @@ import {
   Modal, ConfirmDialog, EmptyState, PageLoader, FormField, Pagination,
 } from '../../components/ui'
 import { formatCurrency, formatDate } from '../../lib/utils'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 const schema = z.object({
@@ -27,6 +28,7 @@ const PER_PAGE = 12
 export default function PartsPage() {
   const { user } = useAuth()
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [modalOpen, setModalOpen] = useState(false)
@@ -176,8 +178,16 @@ export default function PartsPage() {
                       <td className="table-cell text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
+                            onClick={() => navigate(`/pecas/${part.id}`)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                            title="Visualizar"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
                             onClick={() => openEdit(part)}
                             className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                            title="Editar"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>

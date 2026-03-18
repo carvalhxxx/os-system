@@ -3,20 +3,20 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Edit2, Phone, Mail, MapPin, FileText,
-  ClipboardList,  TrendingUp,
+  ClipboardList, TrendingUp,
   CheckCircle2, XCircle, Plus, User,
 } from 'lucide-react'
 import { clientHistoryService } from '../../services/clientHistory.service'
 import { clientsService } from '../../services/clients.service'
 import {
-  PageLoader, Modal, FormField, ConfirmDialog,
+   PageLoader, Modal, FormField, ConfirmDialog,
 } from '../../components/ui'
 import {
   formatCurrency, formatDate,
   STATUS_LABELS, STATUS_COLORS,
   PAYMENT_STATUS_LABELS, PAYMENT_STATUS_COLORS,
 } from '../../lib/utils'
-import { ClientInsert, ServiceOrder, PAYMENT_METHOD_LABELS, PaymentMethod } from '../../types'
+import { ClientInsert, ServiceOrder } from '../../types'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -103,13 +103,8 @@ function OrderRow({ order }: { order: ServiceOrder }) {
 
       <td className="table-cell hidden lg:table-cell">
         {order.status === 'finalizada' ? (
-          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${PAYMENT_STATUS_COLORS[order.payment_status]}`}>
+          <span className={`inline-flex text-xs font-semibold px-2 py-0.5 rounded-full ${PAYMENT_STATUS_COLORS[order.payment_status]}`}>
             {PAYMENT_STATUS_LABELS[order.payment_status]}
-            {order.payment_method && (
-              <span className="font-normal opacity-75">
-                · {PAYMENT_METHOD_LABELS[order.payment_method as PaymentMethod]}
-              </span>
-            )}
           </span>
         ) : (
           <span className="text-gray-300 dark:text-slate-600 text-xs">—</span>

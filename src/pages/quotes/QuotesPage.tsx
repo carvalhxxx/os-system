@@ -134,7 +134,7 @@ export default function QuotesPage() {
                       <div className="flex items-center gap-1 justify-end">
                         <button
                           onClick={() => navigate(`/orcamentos/${q.id}`)}
-                          className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                           title="Ver orçamento"
                         >
                           <Eye className="w-4 h-4" />
@@ -143,7 +143,7 @@ export default function QuotesPage() {
                           <>
                             <button
                               onClick={() => navigate(`/orcamentos/${q.id}`)}
-                              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 transition-colors"
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                               title="Editar"
                             >
                               <Pencil className="w-4 h-4" />
@@ -168,7 +168,7 @@ export default function QuotesPage() {
       )}
 
       {total > PAGE_SIZE && (
-        <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} onPageChange={setPage} />
+        <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} total={total} perPage={PAGE_SIZE} onPageChange={setPage} />
       )}
 
       <ConfirmDialog

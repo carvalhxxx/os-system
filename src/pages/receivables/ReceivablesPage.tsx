@@ -40,12 +40,14 @@ export default function ReceivablesPage() {
     queryKey: ['receivable-stats', user?.id],
     queryFn: () => paymentsService.getStats(user!.id),
     enabled: !!user,
+    staleTime: 0,
   })
 
   const { data: orders = [], isLoading: loadingOrders } = useQuery({
     queryKey: ['receivables', user?.id, filter],
     queryFn: () => paymentsService.getReceivables(user!.id, filter || undefined),
     enabled: !!user,
+    staleTime: 0,
   })
 
   const sevenDaysAgo = new Date()

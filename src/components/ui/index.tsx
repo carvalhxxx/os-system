@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { OrderStatus } from '../../types'
 import { STATUS_LABELS, STATUS_COLORS } from '../../lib/utils'
@@ -35,7 +36,7 @@ const MODAL_SIZES = {
 }
 
 export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null)
+  const mouseDownTarget = useRef<EventTarget | null>(null)
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -53,11 +54,17 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
 
   if (!open) return null
 
-  return (
+  return createPortal(
     <div
-      ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
+      onMouseDown={(e) => { mouseDownTarget.current = e.target }}
+      onMouseUp={(e) => {
+        if (
+          mouseDownTarget.current === e.currentTarget &&
+          e.target === e.currentTarget
+        ) onClose()
+        mouseDownTarget.current = null
+      }}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div className={`relative w-full ${MODAL_SIZES[size]} bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 flex flex-col max-h-[90vh]`}>
@@ -74,7 +81,8 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

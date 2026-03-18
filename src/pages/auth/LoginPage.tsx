@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -100,10 +100,7 @@ export default function LoginPage() {
               Entrar na conta
             </h2>
             <p className="text-gray-500 dark:text-slate-400 text-sm mb-8">
-              Não tem conta?{' '}
-              <Link to="/registro" className="text-blue-600 hover:underline font-medium">
-                Cadastre-se
-              </Link>
+              Entre com suas credenciais para acessar o sistema.
             </p>
           </div>
 
@@ -125,9 +122,7 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="label mb-0">Senha</label>
-                <Link to="/recuperar-senha" className="text-xs text-blue-600 hover:underline">
-                  Esqueceu a senha?
-                </Link>
+
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

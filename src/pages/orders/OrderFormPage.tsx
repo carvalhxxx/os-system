@@ -17,7 +17,7 @@ import { ClientPicker } from '../../components/ClientPicker'
 import { TechnicianPicker } from '../../components/TechnicianPicker'
 import { OrderItemsPanel } from '../../components/OrderItemsPanel'
 import { OrderNotesPanel } from '../../components/OrderNotesPanel'
-import { formatFileSize } from '../../lib/utils'
+import { formatFileSize, localDateString } from '../../lib/utils'
 import toast from 'react-hot-toast'
 
 const schema = z.object({
@@ -74,7 +74,7 @@ export default function OrderFormPage() {
     defaultValues: {
       status:      'aberta',
       labor_value: 0,
-      opened_at:   new Date().toISOString().split('T')[0],
+      opened_at:   localDateString(),
     },
   })
 

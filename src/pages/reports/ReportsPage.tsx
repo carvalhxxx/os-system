@@ -5,11 +5,12 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import {
-  TrendingUp, TrendingDown, DollarSign, ClipboardList, Users, Wrench, Package, Award, ChevronDown,
+  TrendingUp, TrendingDown, DollarSign, ClipboardList,
+  Clock, Users, Wrench, Package, Award, ChevronDown,
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { reportsService, ReportFilters } from '../../services/reports.service'
-import { formatCurrency, formatDate, STATUS_LABELS } from '../../lib/utils'
+import { formatCurrency, formatDate, STATUS_LABELS, STATUS_COLORS } from '../../lib/utils'
 import { PageLoader } from '../../components/ui'
 
 // ─── Preset de períodos ────────────────────────────────────

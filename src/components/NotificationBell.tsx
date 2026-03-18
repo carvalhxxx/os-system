@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Bell, AlertTriangle, Clock, CheckCircle, X } from 'lucide-react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import { formatDate } from '../lib/utils'
+import {  localDateString } from '../lib/utils'
 
 interface Notification {
   id: string
@@ -17,8 +17,8 @@ interface Notification {
 }
 
 async function fetchNotifications(userId: string): Promise<Notification[]> {
-  const today = new Date().toISOString().split('T')[0]
-  const staleDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const today = localDateString()
+  const staleDate = (() => { const d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })()
 
   const { data, error } = await supabase
     .from('service_orders')

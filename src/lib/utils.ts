@@ -15,13 +15,23 @@ export function formatCurrency(value: number): string {
 }
 
 // Date formatting
+// Retorna a data local no formato YYYY-MM-DD (sem problema de timezone)
+export function localDateString(): string {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export function formatDate(date: string | null): string {
   if (!date) return '—'
+  const normalized = date.includes('T') ? date : `${date}T00:00:00`
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  }).format(new Date(date))
+  }).format(new Date(normalized))
 }
 
 export function formatDateTime(date: string | null): string {

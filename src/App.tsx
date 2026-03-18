@@ -21,6 +21,7 @@ import OrdersPage from './pages/orders/OrdersPage'
 import OrderFormPage from './pages/orders/OrderFormPage'
 import OrderDetailPage from './pages/orders/OrderDetailPage'
 import PartsPage from './pages/parts/PartsPage'
+import PartDetailPage from './pages/parts/PartDetailPage'
 import ReportsPage from './pages/reports/ReportsPage'
 import QuotesPage from './pages/quotes/QuotesPage'
 import QuoteFormPage from './pages/quotes/QuoteFormPage'
@@ -74,6 +75,7 @@ export default function App() {
                   <Route path="/tecnicos" element={<TechniciansPage />} />
                   <Route path="/tecnicos/:id" element={<TechnicianDetailPage />} />
                   <Route path="/pecas" element={<PartsPage />} />
+                  <Route path="/pecas/:id" element={<PartDetailPage />} />
                   <Route path="/relatorios" element={<ReportsPage />} />
                   <Route path="/recebimentos" element={<ReceivablesPage />} />
                   <Route path="/ordens" element={<OrdersPage />} />

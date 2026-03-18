@@ -163,7 +163,7 @@ export default function OrderFormPage() {
       diagnosis:           data.diagnosis || null,
       service_performed:   data.service_performed || null,
       labor_value:         data.labor_value,
-      service_value:       data.labor_value,
+      service_value:       data.labor_value + (order?.parts_total ?? 0),
       status:              data.status,
       opened_at:           data.opened_at,
       closed_at:           data.closed_at || null,

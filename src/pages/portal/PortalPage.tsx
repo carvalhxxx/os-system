@@ -135,6 +135,8 @@ export default function PortalPage() {
   const { data: order, isLoading, isError } = useQuery({
     queryKey: ['portal', token],
     queryFn: () => portalService.getByToken(token!),
+    refetchInterval: 30000, // atualiza a cada 30 segundos
+    refetchIntervalInBackground: false, // só quando a aba está ativa
     enabled: !!token,
     retry: false,
   })

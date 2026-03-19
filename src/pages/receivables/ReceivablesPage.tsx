@@ -104,7 +104,12 @@ export default function ReceivablesPage() {
               {formatCurrency(stats.total_paid)}
             </p>
             <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-              {stats.count_paid} OS paga{stats.count_paid !== 1 ? 's' : ''}
+              {stats.count_paid} paga{stats.count_paid !== 1 ? 's' : ''} integralmente
+              {stats.count_partial > 0 && (
+                <span className="text-amber-500 dark:text-amber-400 ml-1">
+                  · {stats.count_partial} {stats.count_partial !== 1 ? 'parciais' : 'parcial'}
+                </span>
+              )}
             </p>
           </div>
 
